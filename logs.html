@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Activity Logs - POLYMAX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background:#f5f7fa;
+      margin:0;
+      padding:30px;
+    }
+    h1{
+      margin:0 0 8px 0;
+      color:#2c3e50;
+      font-size:32px;
+    }
+    p{
+      color:#777;
+      margin:0 0 20px 0;
+    }
+    .table-container{
+      background:white;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+      overflow-x:auto;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    th,td{
+      padding:12px 14px;
+      border-bottom:1px solid #eee;
+      font-size:14px;
+    }
+    th{
+      text-align:left;
+      background:#f8f9fa;
+      font-weight:600;
+      text-transform:uppercase;
+      font-size:12px;
+      color:#555;
+    }
+    tr:hover{
+      background:#f8f9fa;
+    }
+    .tag{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#e8f5e9;
+      color:#2e7d32;
+      font-size:11px;
+      font-weight:600;
+    }
+    .error{
+      color:#c0392b;
+      font-size:13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Activity Logs</h1>
+  <p>Every time a product is created, updated, or deleted, a log entry is saved here.</p>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="logsTableBody">
+        <tr>
+          <td colspan="4">Loading logs...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // SAME CONFIG AS DASHBOARD
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+      authDomain: "ware-house-robot.firebaseapp.com",
+      projectId: "ware-house-robot",
+      storageBucket: "ware-house-robot.firebasestorage.app",
+      messagingSenderId: "1053408602269",
+      appId: "1:1053408602269:web:fb276014330b5161488c74",
+      measurementId: "G-73HM1FJ2FM"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    const logsTableBody = document.getElementById("logsTableBody");
+
+    function formatTime(ts){
+      if (!ts) return "-";
+      try{
+        const d = typeof ts.toDate === "function" ? ts.toDate() : new Date(ts);
+        if (isNaN(d.getTime())) return "-";
+        return d.toLocaleString("en-GB", {
+          day:"2-digit", month:"short", year:"numeric",
+          hour:"2-digit", minute:"2-digit", second:"2-digit"
+        });
+      }catch{
+        return "-";
+      }
+    }
+
+    function startLogsListener(){
+      const logsRef   = collection(db,"logs");   // collection name
+      const logsQuery = query(logsRef, orderBy("time","desc"));
+
+      onSnapshot(
+        logsQuery,
+        snapshot => {
+          if (snapshot.empty){
+            logsTableBody.innerHTML =
+              `<tr><td colspan="4">No logs yet. Try adding or updating a product.</td></tr>`;
+            return;
+          }
+          logsTableBody.innerHTML = "";
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${formatTime(data.time)}</td>
+              <td>${data.user || "-"}</td>
+              <td><span class="tag">${data.action || "-"}</span></td>
+              <td>${data.name || ""}</td>
+            `;
+            logsTableBody.appendChild(tr);
+          });
+        },
+        err => {
+          console.error("Error loading logs:", err);
+          logsTableBody.innerHTML =
+            `<tr><td colspan="4" class="error">
+               Error loading logs: ${err.message}
+             </td></tr>`;
+        }
+      );
+    }
+
+    // Wait until user is logged in (important for Firestore security rules)
+    onAuthStateChanged(auth, user => {
+      if (!user){
+        // not logged in – send back to login
+        window.location.href = "index.html";
+        return;
+      }
+      startLogsListener();
+    });
+  </script>
+</body>
+</html>
+
+

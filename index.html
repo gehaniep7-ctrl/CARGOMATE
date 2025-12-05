@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Warehouse Dashboard – Landing</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="landing">
+
+  <!-- Login button at top-right -->
+  <button class="login-btn-top" onclick="window.location.href='login.html'">
+    Login
+  </button>
+
+  <!-- Main center card -->
+  <div class="landing-card">
+
+      <div class="landing-title">
+        CARGOMATE Warehouse Dashboard
+      </div>
+
+      <div class="landing-subtitle">
+        Live overview of orders, stock levels and packing performance.
+      </div>
+
+  </div> <!-- END landing-card -->
+
+  <!-- Help Center -->
+  <div class="help-center-card">
+    <div class="help-title">Help Center</div>
+    <div class="help-text">
+      If you need any help or something went wrong,<br>
+      please contact the warehouse admin.
+    </div>
+
+    <a class="help-whatsapp" 
+       href="https://wa.me/0740685664" 
+       target="_blank">
+      <span class="whatsapp-icon">W</span>
+      Chat on WhatsApp
+    </a>
+  </div>
+
+  <!-- Firebase (optional here, safe to keep) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+      authDomain: "ware-house-robot.firebaseapp.com",
+      projectId: "ware-house-robot",
+      storageBucket: "ware-house-robot.firebasestorage.app",
+      messagingSenderId: "1053408602269",
+      appId: "1:1053408602269:web:fb276014330b5161488c74",
+      measurementId: "G-73HM1FJ2FM"
+    };
+
+    initializeApp(firebaseConfig);
+  </script>
+
+</body>
+</html>
+

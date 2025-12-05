@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Products - POLYMAX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar */
+    .topbar {
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.4);
+    }
+
+    .topbar-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .topbar-subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .back-btn {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: none;
+      background: #1d4ed8;
+      color: #f9fafb;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .back-btn:hover {
+      background: #2563eb;
+    }
+
+    /* Page content */
+    .page {
+      padding: 24px 32px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    .page-desc {
+      color: #6b7280;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    /* Form card */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px 20px 24px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+      border: 1px solid #e5e7eb;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .badge {
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      outline: none;
+      background: #f9fafb;
+    }
+
+    input:focus, select:focus {
+      border-color: #2563eb;
+      background: #ffffff;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: #16a34a;
+      color: #f9fafb;
+    }
+
+    .btn-primary:hover {
+      background: #22c55e;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .status-text {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+      min-height: 16px;
+    }
+
+    .status-text.ok {
+      color: #16a34a;
+    }
+
+    .status-text.err {
+      color: #dc2626;
+    }
+
+    /* Table card */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .search-input {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      background: #f9fafb;
+      width: 220px;
+    }
+
+    .table-wrapper {
+      max-height: 550px;
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #ffffff;
+    }
+
+    thead {
+      background: #f9fafb;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: #4b5563;
+      font-size: 12px;
+    }
+
+    tbody tr:hover {
+      background: #f3f4ff;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-xs {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+
+    .btn-edit {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-edit:hover {
+      background: #bfdbfe;
+    }
+
+    .btn-delete {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      background: #fecaca;
+    }
+
+    .pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+
+    .pill-stock-ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .pill-stock-low {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">POLYMAX Warehouse</div>
+      <div class="topbar-subtitle">Admin &gt; Product Management</div>
+    </div>
+    <button class="back-btn" onclick="window.close()">Close</button>
+  </div>
+
+  <div class="page">
+    <h1 class="page-title">Product Management</h1>
+    <p class="page-desc">
+      Add, edit or remove products from your warehouse inventory. Changes are saved directly to Firebase.
+    </p>
+
+    <div class="grid">
+      <!-- LEFT: FORM -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="formModeTitle">Add New Product</div>
+          <div class="badge" id="formModeBadge">CREATE</div>
+        </div>
+
+        <form id="productForm">
+          <!-- Hidden field for editing -->
+          <input type="hidden" id="productId" />
+
+          <div class="form-group">
+            <label for="productName">Product Name *</label>
+            <input id="productName" type="text" required />
+          </div>
+
+          <div class="form-group">
+            <label for="sku">SKU / Code *</label>
+            <input id="sku" type="text" required />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="category">Category</label>
+              <input id="category" type="text" placeholder="e.g. Plastic Sheets" />
+            </div>
+            <div class="form-group">
+              <label for="location">Location / Rack</label>
+              <input id="location" type="text" placeholder="e.g. R2-A3" />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="quantity">Quantity *</label>
+              <input id="quantity" type="number" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="reorderLevel">Reorder Level</label>
+              <input id="reorderLevel" type="number" min="0" placeholder="e.g. 20" />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="unitPrice">Unit Price</label>
+              <input id="unitPrice" type="number" min="0" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label for="status">Status</label>
+              <select id="status">
+                <option value="Active" selected>Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="saveBtn">Save Product</button>
+            <button type="button" class="btn btn-secondary" id="resetBtn">Clear</button>
+          </div>
+          <div class="status-text" id="formStatus"></div>
+        </form>
+      </div>
+
+      <!-- RIGHT: TABLE -->
+      <div class="card">
+        <div class="table-header">
+          <div class="card-title">Products List</div>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search by name / SKU..."
+          />
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Reorder</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    // TODO: replace with your real Firebase config (same as main dashboard)
+    const firebaseConfig = {
+ apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+
+      // storageBucket, messagingSenderId, appId (optional if already used)
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // References
+    const productForm = document.getElementById("productForm");
+    const productIdInput = document.getElementById("productId");
+    const formModeTitle = document.getElementById("formModeTitle");
+    const formModeBadge = document.getElementById("formModeBadge");
+    const formStatus = document.getElementById("formStatus");
+    const resetBtn = document.getElementById("resetBtn");
+    const productsTableBody = document.getElementById("productsTableBody");
+    const searchInput = document.getElementById("searchInput");
+
+    const nameInput = document.getElementById("productName");
+    const skuInput = document.getElementById("sku");
+    const categoryInput = document.getElementById("category");
+    const locationInput = document.getElementById("location");
+    const quantityInput = document.getElementById("quantity");
+    const reorderInput = document.getElementById("reorderLevel");
+    const unitPriceInput = document.getElementById("unitPrice");
+    const statusInput = document.getElementById("status");
+
+    let productsCache = []; // for search filter
+
+    // Helper: reset form to CREATE mode
+    function resetForm() {
+      productIdInput.value = "";
+      productForm.reset();
+      statusInput.value = "Active";
+      formModeTitle.textContent = "Add New Product";
+      formModeBadge.textContent = "CREATE";
+      formModeBadge.style.background = "#eff6ff";
+      formModeBadge.style.color = "#1d4ed8";
+      formStatus.textContent = "";
+      formStatus.className = "status-text";
+    }
+
+    resetBtn.addEventListener("click", resetForm);
+
+    // Submit form: create or update
+    productForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      formStatus.textContent = "Saving...";
+      formStatus.className = "status-text";
+
+      const data = {
+        name: nameInput.value.trim(),
+        sku: skuInput.value.trim(),
+        category: categoryInput.value.trim(),
+        location: locationInput.value.trim(),
+        quantity: Number(quantityInput.value || 0),
+        reorderLevel: reorderInput.value === "" ? null : Number(reorderInput.value),
+        unitPrice: unitPriceInput.value === "" ? null : Number(unitPriceInput.value),
+        status: statusInput.value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (!data.name || !data.sku) {
+        formStatus.textContent = "Product name and SKU are required.";
+        formStatus.classList.add("err");
+        return;
+      }
+
+      const id = productIdInput.value;
+
+      try {
+        if (id) {
+          // Update existing
+          await db.collection("products").doc(id).update(data);
+          formStatus.textContent = "Product updated successfully.";
+        } else {
+          // New product
+          data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection("products").add(data);
+          formStatus.textContent = "Product added successfully.";
+        }
+        formStatus.classList.add("ok");
+        resetForm();
+      } catch (err) {
+        console.error(err);
+        formStatus.textContent = "Error saving product. Check console.";
+        formStatus.classList.add("err");
+      }
+    });
+
+    // Load & live-update products table
+    function renderTable(products) {
+      productsTableBody.innerHTML = "";
+      if (!products.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 9;
+        td.textContent = "No products found.";
+        td.style.textAlign = "center";
+        td.style.padding = "16px";
+        tr.appendChild(td);
+        productsTableBody.appendChild(tr);
+        return;
+      }
+
+      products.forEach((p) => {
+        const tr = document.createElement("tr");
+
+        const qty = p.quantity ?? 0;
+        const reorder = p.reorderLevel ?? 0;
+        const lowStock = reorder && qty <= reorder;
+
+        tr.innerHTML = `
+          <td>${p.name || "-"}</td>
+          <td>${p.sku || "-"}</td>
+          <td>${p.category || "-"}</td>
+          <td>${qty}</td>
+          <td>${reorder || "-"}</td>
+          <td>${p.location || "-"}</td>
+          <td>
+            <span class="pill ${
+              lowStock
+                ? "pill-stock-low"
+                : "pill-stock-ok"
+            }">${lowStock ? "Low Stock" : p.status || "Active"}</span>
+          </td>
+          <td>${p.unitPrice != null ? p.unitPrice.toFixed(2) : "-"}</td>
+          <td>
+            <div class="table-actions">
+              <button class="btn-xs btn-edit" data-id="${p.id}">Edit</button>
+              <button class="btn-xs btn-delete" data-id="${p.id}">Del</button>
+            </div>
+          </td>
+        `;
+
+        productsTableBody.appendChild(tr);
+      });
+    }
+
+    // Subscribe to Firestore changes
+    db.collection("products")
+      .orderBy("createdAt", "desc")
+      .onSnapshot((snapshot) => {
+        productsCache = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        applySearchFilter();
+      });
+
+    // Search filter
+    function applySearchFilter() {
+      const term = searchInput.value.trim().toLowerCase();
+      if (!term) {
+        renderTable(productsCache);
+        return;
+      }
+      const filtered = productsCache.filter((p) => {
+        return (
+          (p.name || "").toLowerCase().includes(term) ||
+          (p.sku || "").toLowerCase().includes(term) ||
+          (p.category || "").toLowerCase().includes(term)
+        );
+      });
+      renderTable(filtered);
+    }
+
+    searchInput.addEventListener("input", applySearchFilter);
+
+    // Delegate click for Edit / Delete buttons
+    productsTableBody.addEventListener("click", async (e) => {
+      const target = e.target;
+      const id = target.getAttribute("data-id");
+      if (!id) return;
+
+      if (target.classList.contains("btn-edit")) {
+        const product = productsCache.find((p) => p.id === id);
+        if (!product) return;
+
+        productIdInput.value = product.id;
+        nameInput.value = product.name || "";
+        skuInput.value = product.sku || "";
+        categoryInput.value = product.category || "";
+        locationInput.value = product.location || "";
+        quantityInput.value = product.quantity ?? 0;
+        reorderInput.value = product.reorderLevel ?? "";
+        unitPriceInput.value = product.unitPrice ?? "";
+        statusInput.value = product.status || "Active";
+
+        formModeTitle.textContent = "Edit Product";
+        formModeBadge.textContent = "EDIT";
+        formModeBadge.style.background = "#fef3c7";
+        formModeBadge.style.color = "#92400e";
+        formStatus.textContent = "Editing existing product...";
+        formStatus.className = "status-text";
+      }
+
+      if (target.classList.contains("btn-delete")) {
+        const confirmDel = confirm("Delete this product permanently?");
+        if (!confirmDel) return;
+        try {
+          await db.collection("products").doc(id).delete();
+        } catch (err) {
+          console.error(err);
+          alert("Error deleting product. See console for details.");
+        }
+      }
+    });
+
+    // Initial
+    resetForm();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Efficiency Dashboard - CARGOMATE</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background:linear-gradient(135deg,#f5f7fa 0%,#e8eef5 100%);
+      min-height:100vh;
+    }
+    .dashboard-layout{display:flex;min-height:100vh;}
+
+    /* SIDEBAR */
+    .sidebar{
+      width:240px;background:linear-gradient(180deg,#2c3e50 0%,#34495e 100%);
+      color:white;padding:24px;display:flex;flex-direction:column;
+      box-shadow:4px 0 20px rgba(0,0,0,0.1);position:fixed;height:100vh;overflow-y:auto;
+    }
+    .sidebar-logo{
+      font-size:28px;font-weight:700;margin-bottom:40px;color:#3498db;
+      text-align:center;letter-spacing:2px;text-shadow:0 2px 4px rgba(0,0,0,0.2);
+    }
+    .sidebar-nav{flex:1;}
+    .sidebar-nav button{
+      width:100%;padding:12px 16px;margin-bottom:8px;border:none;
+      background:rgba(255,255,255,0.1);color:white;border-radius:8px;cursor:pointer;
+      font-size:15px;transition:all 0.3s;text-align:left;display:flex;
+      align-items:center;gap:10px;
+    }
+    .sidebar-nav button:hover{background:rgba(255,255,255,0.2);transform:translateX(4px);}
+    .sidebar-nav button.active{
+      background:rgba(52,152,219,0.3);border-left:4px solid #3498db;
+    }
+    #logoutBtn{
+      margin-top:auto;border-radius:12px;padding:12px;border:none;
+      background:rgba(231,76,60,0.2);color:#e74c3c;cursor:pointer;
+      font-weight:600;transition:all 0.3s;width:100%;
+    }
+    #logoutBtn:hover{background:#e74c3c;color:white;}
+
+    /* MAIN */
+    .main-area{flex:1;margin-left:240px;overflow-y:auto;}
+    .top-bar{
+      background:white;padding:20px 30px;display:flex;justify-content:space-between;
+      align-items:center;box-shadow:0 2px 10px rgba(0,0,0,0.05);
+      position:sticky;top:0;z-index:100;
+    }
+    #searchInput{
+      width:400px;padding:12px 18px;border:2px solid #e0e0e0;border-radius:12px;
+      font-size:15px;transition:all 0.3s;
+    }
+    #searchInput:focus{
+      outline:none;border-color:#3498db;box-shadow:0 0 0 3px rgba(52,152,219,0.1);
+    }
+    #userInfo{color:#2c3e50;font-weight:500;display:flex;align-items:center;gap:8px;}
+
+    .section-container{display:none;}
+    .section-container.active{display:block;}
+
+    /* METRICS */
+    .metrics-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:20px;padding:30px;
+    }
+    .metric-card{
+      background:white;padding:24px;border-radius:16px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);transition:transform 0.3s,box-shadow 0.3s;
+      position:relative;overflow:hidden;
+    }
+    .metric-card::before{
+      content:'';position:absolute;top:0;left:0;width:100%;height:4px;
+      background:linear-gradient(90deg,#3498db,#2ecc71);
+    }
+    .metric-card:hover{transform:translateY(-5px);box-shadow:0 8px 25px rgba(0,0,0,0.12);}
+    .metric-title{font-size:13px;color:#7f8c8d;margin-bottom:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:0.5px;}
+    .metric-value{font-size:32px;font-weight:700;color:#2c3e50;margin-bottom:8px;}
+    .metric-subtitle{font-size:14px;color:#7f8c8d;margin-top:8px;}
+
+    /* GAUGE */
+    .gauge-container{position:relative;width:120px;height:120px;margin:16px auto;}
+    .gauge-bg{
+      width:100%;height:100%;border-radius:50%;
+      background:conic-gradient(from 180deg,#e8f5e9 0deg,#4caf50 0deg);
+      position:relative;transition:background 1s ease;
+    }
+    .gauge-center{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:80px;height:80px;background:white;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1) inset;
+    }
+    .gauge-value{font-size:20px;font-weight:700;color:#2c3e50;}
+    .gauge-label{font-size:10px;color:#7f8c8d;margin-top:2px;}
+
+    /* TABLES */
+    .stock-table{margin:20px 30px;background:white;border-radius:16px;padding:24px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);}
+    .stock-table h3{margin-bottom:16px;color:#2c3e50;font-size:20px;
+      display:flex;align-items:center;gap:8px;}
+
+    .full-page-table{padding:30px;}
+    .full-page-table h2{
+      color:#2c3e50;font-size:28px;margin-bottom:20px;display:flex;align-items:center;gap:10px;
+    }
+    .table-container{
+      background:white;border-radius:16px;padding:30px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    }
+    table{width:100%;border-collapse:collapse;}
+    th{
+      background:#f8f9fa;padding:14px;text-align:left;font-weight:600;color:#495057;
+      font-size:13px;text-transform:uppercase;letter-spacing:0.5px;
+      border-bottom:2px solid #dee2e6;
+    }
+    td{
+      padding:16px 14px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#555;
+    }
+    tbody tr{transition:background 0.2s;cursor:pointer;}
+    tbody tr:hover{background:#f8f9fa;}
+
+    .status-badge{
+      display:inline-block;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:600;
+    }
+    .status-good{background:#e8f5e9;color:#2e7d32;}
+    .status-low{background:#ffebee;color:#c62828;}
+    .status-normal{background:#fff3e0;color:#ef6c00;}
+    .status-active{background:#e6f9f0;color:#16a085;}
+    .status-disabled{background:#fdecea;color:#c0392b;}
+
+    .empty-state{text-align:center;padding:60px 20px;color:#999;}
+    .empty-state-icon{font-size:64px;margin-bottom:16px;opacity:0.3;}
+
+    .admin-only{display:none;}
+    #adminSection{
+      margin:30px;padding:24px;background:white;border-radius:16px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    }
+    #adminSection h3{
+      display:flex;align-items:center;gap:8px;color:#2c3e50;margin-bottom:8px;
+    }
+
+    .loading-spinner{
+      display:inline-block;width:20px;height:20px;border:3px solid rgba(52,152,219,0.3);
+      border-radius:50%;border-top-color:#3498db;animation:spin 1s ease-in-out infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg);} }
+
+    /* Reports area */
+    .reports-card{
+      margin-top:24px;padding:20px;background:#f8f9fa;border-radius:16px;
+      border-left:4px solid #3498db;
+    }
+    .reports-header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+    .reports-header label{font-size:13px;font-weight:600;color:#555;}
+    .reports-header input{
+      padding:6px 10px;border-radius:8px;border:1px solid:#ccc;font-size:13px;
+    }
+    .reports-header button{
+      padding:8px 16px;border:none;border-radius:8px;cursor:pointer;
+      font-size:13px;font-weight:600;
+    }
+    .btn-primary{background:#3498db;color:white;}
+    .btn-secondary{background:#2ecc71;color:white;}
+
+    /* User management extra styles */
+    .stats-row{
+      display:flex;
+      gap:16px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+    .stat-card{
+      flex:1 1 160px;
+      padding:12px 14px;
+      border-radius:10px;
+      background:#f7f9fc;
+    }
+    .stat-label{font-size:12px;color:#7f8c8d;margin-bottom:4px;}
+    .stat-value{font-size:18px;font-weight:600;color:#2c3e50;}
+    .user-search-row{
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .user-search-input{
+      flex:1;
+      padding:8px 10px;
+      border-radius:6px;
+      border:1px solid #d0d7e2;
+      font-size:13px;
+    }
+    .btn-small{
+      padding:6px 10px;
+      border-radius:6px;
+      border:none;
+      font-size:12px;
+      cursor:pointer;
+      margin-right:4px;
+    }
+    .btn-toggle-user{background:#f39c12;color:white;}
+    .btn-reset-user{background:#3498db;color:white;}
+
+    @media (max-width:1024px){
+      .sidebar{width:200px;}
+      .main-area{margin-left:200px;}
+      .metrics-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
+    }
+    @media (max-width:768px){
+      .sidebar{width:70px;padding:16px 8px;}
+      .sidebar-logo{
+        font-size:18px;writing-mode:vertical-rl;transform:rotate(180deg);
+      }
+      .sidebar-nav button{padding:12px 8px;font-size:20px;justify-content:center;}
+      .sidebar-nav button span{display:none;}
+      .main-area{margin-left:70px;}
+      .metrics-grid{grid-template-columns:1fr;padding:16px;}
+      #searchInput{width:100%;max-width:300px;}
+      .stock-table,.full-page-table{overflow-x:auto;}
+      table{min-width:600px;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">CARGOMATE</div>
+    <div class="sidebar-nav">
+      <button id="btnOverview" class="active"><span></span><span>Overview</span></button>
+      <button id="btnOrders"><span></span><span>Orders</span></button>
+      <button id="btnInventory"><span></span><span>Inventory</span></button>
+      <button id="btnAdmin" class="admin-only"><span></span><span>Admin Panel</span></button>
+    </div>
+    <button id="logoutBtn">Logout</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-area">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <input type="text" id="searchInput" placeholder=" Search product / order code" autocomplete="off">
+      <div id="userInfo">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div id="overviewSection" class="section-container active">
+      <section style="padding:30px 30px 10px 30px;">
+        <h1 style="margin:0 0 8px 0;color:#2c3e50;font-size:28px;">Warehouse Dashboard</h1>
+        <p style="color:#777;font-size:15px;margin:0;">
+          Monitor real-time inventory metrics, track product performance, and manage warehouse operations efficiently.
+        </p>
+      </section>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-title">Inventory Carrying Rate</div>
+          <div class="gauge-container">
+            <div class="gauge-bg" id="carryingGauge">
+              <div class="gauge-center">
+                <div class="gauge-value" id="carryingValue">0%</div>
+                <div class="gauge-label">of 100</div>
+              </div>
+            </div>
+          </div>
+          <div class="metric-subtitle">Stock holding efficiency</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Inventory Turnover Rate</div>
+          <div class="gauge-container">
+            <div class="gauge-bg" id="turnoverGauge">
+              <div class="gauge-center">
+                <div class="gauge-value" id="turnoverValue">0</div>
+                <div class="gauge-label">times/year</div>
+              </div>
+            </div>
+          </div>
+          <div class="metric-subtitle">Inventory cycle frequency</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">Inventory to Sales Ratio</div>
+          <div class="gauge-container">
+            <div class="gauge-bg" id="salesRatioGauge">
+              <div class="gauge-center">
+                <div class="gauge-value" id="salesRatioValue">0%</div>
+                <div class="gauge-label">ratio</div>
+              </div>
+            </div>
+          </div>
+          <div class="metric-subtitle">Stock vs sales balance</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title"> Out of Stock</div>
+          <div class="metric-value" id="outOfStockPercent">0%</div>
+          <div class="metric-subtitle">
+            <span id="outOfStockCount">0</span> out of <span id="totalProductCount">0</span> products
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title"> Return Rate</div>
+          <div class="metric-value" id="returnRate">0%</div>
+          <div class="metric-subtitle">
+            <span id="returnedUnits">0</span> returned units
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title"> Back Order Rate</div>
+          <div class="metric-value" id="backOrderRate">0%</div>
+          <div class="metric-subtitle">
+            <span id="backOrders">0</span> pending orders
+          </div>
+        </div>
+      </div>
+
+      <section id="adminSection" class="admin-only">
+        <h3> Admin Controls</h3>
+        <p style="color:#777;margin-top:8px;">Advanced warehouse management tools and settings are available in this section.</p>
+      </section>
+
+      <div style="padding:30px;text-align:center;color:#999;font-size:13px;">
+        <p>CARGOMATE Warehouse Management System © 2024</p>
+      </div>
+    </div>
+
+    <!-- INVENTORY SECTION (READ ONLY) -->
+    <div id="inventorySection" class="section-container">
+      <div class="full-page-table">
+        <h2> Complete Product Inventory</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+            <tr>
+              <th>Product</th>
+              <th>Code</th>
+              <th>Price (Rs.)</th>
+              <th>Units in Hand</th>
+              <th>Units on Order</th>
+              <th>Sales (Total)</th>
+              <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="fullStockTableContent">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <div class="empty-state-icon">📦</div>
+                  <div>Loading inventory data...</div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT MANAGEMENT SECTION (CRUD, ONLY FROM ADMIN PANEL) -->
+    <div id="productManagementSection" class="section-container">
+      <div class="full-page-table">
+        <h2>Product Management</h2>
+
+        <div style="margin-bottom:15px;display:flex;justify-content:flex-end;gap:10px;">
+          <button id="btnAddProduct"
+                  style="padding:8px 16px;border:none;border-radius:8px;background:#3498db;color:#fff;font-weight:600;cursor:pointer;">
+            + Add New Product
+          </button>
+        </div>
+
+        <div id="productFormContainer" style="display:none;margin-bottom:20px;">
+          <form id="productForm"
+                style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:flex-end;background:#f8f9fa;padding:15px;border-radius:12px;">
+            <input type="hidden" id="productDocId">
+
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#3498db;">Product Name</label>
+              <input type="text" id="productNameInput" required
+                     style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid:#ccc;">
+            </div>
+
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#3498db;">Code</label>
+              <input type="text" id="productCodeInput" required
+                     style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid:#ccc;">
+            </div>
+
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#3498db;">Price (Rs.)</label>
+              <input type="number" id="productPriceInput" min="0" step="0.01"
+                     style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid:#ccc;">
+            </div>
+
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#555;">Units in Hand</label>
+              <input type="number" id="productStockInput" min="0"
+                     style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid:#ccc;">
+            </div>
+
+            <div>
+              <label style="font-size:13px;font-weight:600;color:#555;">Units on Order</label>
+              <input type="number" id="productOnOrderInput" min="0"
+                     style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid:#ccc;">
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:18px;">
+              <button type="submit"
+                      style="padding:8px 16px;border:none;border-radius:8px;background:#3498db;color:#fff;font-weight:600;cursor:pointer;">
+                Save
+              </button>
+              <button type="button" id="btnCancelEdit"
+                      style="padding:8px 16px;border:none;border-radius:8px;background:#e0e0e0;color:#333;font-weight:600;cursor:pointer;">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+            <tr>
+              <th>Product</th>
+              <th>Code</th>
+              <th>Price (Rs.)</th>
+              <th>Units in Hand</th>
+              <th>Units on Order</th>
+              <th>Sales (Total)</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="productManagementTableBody">
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="empty-state-icon">📦</div>
+                  <div>Loading products...</div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS SECTION -->
+    <div id="ordersSection" class="section-container">
+      <div class="full-page-table">
+        <h2> Orders Management</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Assigned To</th>
+              <th>Items</th>
+              <th>Order Date</th>
+              <th>Payment Method</th>
+              <th>Status</th>
+              <th>Quantity</th>
+              <th>Total Amount</th>
+              <th>Shipping Address</th>
+            </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+            <tr>
+              <td colspan="12">
+                <div class="empty-state">
+                  <div class="empty-state-icon">📦</div>
+                  <div>Loading orders...</div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="adminPanelSection" class="section-container admin-only">
+      <div class="full-page-table">
+        <h2> Admin Control Panel</h2>
+        <div class="table-container">
+          <h3 style="color:#2c3e50;margin-bottom:20px;">System Settings</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+
+            <div id="cardManageUsers" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> User Management</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">Manage user accounts, roles and permissions</p>
+              <button id="manageUsersBtn"
+                      style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                Manage Users
+              </button>
+            </div>
+
+            <div id="cardManageProducts" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> Product Management</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">Add, edit or remove products from inventory</p>
+              <button id="manageProductsBtn"
+                      style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                Manage Products
+              </button>
+            </div>
+
+            <div id="cardReports" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> Reports & Analytics</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">Generate and export detailed reports</p>
+              <button
+                style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;"
+                onclick="window.location.href='reports.html'">
+                View Reports
+              </button>
+            </div>
+
+            <div id="cardNotifications" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> Notifications</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">View important inventory alerts</p>
+              <button id="notificationsBtn"
+                      onclick="window.location.href='alerts.html'"
+                      style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                View Alerts
+              </button>
+            </div>
+
+            <div id="cardSystemConfig" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> System Configuration</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">Configure warehouse and system settings</p>
+              <!-- CHANGED: open system-config.html -->
+              <button
+                onclick="window.location.href='system-config.html'"
+                style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                Configure
+              </button>
+            </div>
+
+            <div id="cardActivityLogs" style="padding:20px;background:#f8f9fa;border-radius:12px;border-left:4px solid #3498db;">
+              <h4 style="color:#2c3e50;margin-bottom:10px;"> Activity Logs</h4>
+              <p style="color:#777;font-size:14px;margin-bottom:15px;">View system activity and audit logs</p>
+              <!-- UPDATED: open logs.html -->
+              <button
+                style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;"
+                onclick="window.location.href='logs.html'">
+                View Logs
+              </button>
+            </div>
+          </div>
+
+          <section id="reportsArea" style="margin-top:30px;display:none;">
+            <!-- ... unchanged report content ... -->
+          </section>
+
+          <!-- UPDATED ADMIN NOTICE (light ash) -->
+          <div style="margin-top:40px;padding:20px;background:#f2f2f2;border-radius:12px;border-left:4px solid #b3b3b3;">
+            <h4 style="color:#555;margin-bottom:10px;"> Admin Notice</h4>
+            <p style="color:#555;font-size:14px;">You have administrative privileges. Use these tools carefully as they affect the entire system.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER MANAGEMENT SECTION (NEW) -->
+    <div id="userManagementSection" class="section-container">
+      <div class="full-page-table">
+        <h2>User Management</h2>
+        <div class="table-container">
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-label">Total Users</div>
+              <div class="stat-value" id="totalUsers">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Admins</div>
+              <div class="stat-value" id="totalAdmins">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Users</div>
+              <div class="stat-value" id="totalActive">0</div>
+            </div>
+          </div>
+
+          <div class="user-search-row">
+            <input id="userSearchInput" class="user-search-input" placeholder="Search by name or email…">
+          </div>
+
+          <table>
+            <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th style="width:200px;">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="usersTableBody">
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="empty-state-icon">👥</div>
+                  <div>Loading users...</div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- FIREBASE & SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    collection,
+    getDocs,
+    onSnapshot,
+    query,
+    orderBy,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+    storageBucket: "ware-house-robot.firebasestorage.app",
+    messagingSenderId: "1053408602269",
+    appId: "1:1053408602269:web:fb276014330b5161488c74",
+    measurementId: "G-73HM1FJ2FM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const productsCollectionRef = collection(db,"products");
+
+  // SIMPLE LOG WRITER
+  async function addLog(action, name) {
+    try {
+      const user = auth.currentUser;
+      await addDoc(collection(db, "logs"), {
+        user: user ? user.email : "unknown",
+        action: action,
+        name: name || "",
+        time: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Error writing log:", err);
+    }
+  }
+
+  // DOM
+  const userInfoDiv = document.getElementById('userInfo');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const adminSection = document.getElementById('adminSection');
+  const adminButtons = document.querySelectorAll('.admin-only');
+  const searchInput = document.getElementById('searchInput');
+
+  const btnOverview = document.getElementById('btnOverview');
+  const btnOrders = document.getElementById('btnOrders');
+  const btnInventory = document.getElementById('btnInventory');
+  const btnAdmin = document.getElementById('btnAdmin');
+  const manageProductsBtn = document.getElementById('manageProductsBtn');
+  const manageUsersBtn = document.getElementById('manageUsersBtn');
+
+  const overviewSection = document.getElementById('overviewSection');
+  const ordersSection = document.getElementById('ordersSection');
+  const inventorySection = document.getElementById('inventorySection');
+  const adminPanelSection = document.getElementById('adminPanelSection');
+  const productManagementSection = document.getElementById('productManagementSection');
+  const userManagementSection = document.getElementById('userManagementSection');
+
+  // inventory DOM
+  const stockTableBody = document.getElementById('stockTableContent'); // now null (overview table removed)
+  const fullStockTableBody = document.getElementById('fullStockTableContent');
+
+  // product management DOM
+  const productManagementTableBody = document.getElementById('productManagementTableBody');
+  const btnAddProduct = document.getElementById('btnAddProduct');
+  const productFormContainer = document.getElementById('productFormContainer');
+  const productFormEl = document.getElementById('productForm');
+  const productDocIdInput = document.getElementById('productDocId');
+  const productNameInput = document.getElementById('productNameInput');
+  const productCodeInput = document.getElementById('productCodeInput');
+  const productPriceInput = document.getElementById('productPriceInput');
+  const productStockInput = document.getElementById('productStockInput');
+  const productOnOrderInput = document.getElementById('productOnOrderInput');
+  const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+  // user management DOM
+  const usersTableBody = document.getElementById('usersTableBody');
+  const userSearchInput = document.getElementById('userSearchInput');
+  const totalUsersEl = document.getElementById('totalUsers');
+  const totalAdminsEl = document.getElementById('totalAdmins');
+  const totalActiveEl = document.getElementById('totalActive');
+
+  // reports (kept for later)
+  const btnViewReports = document.getElementById('btnViewReports');
+  const reportsArea = document.getElementById('reportsArea');
+  const reportFromInput = document.getElementById('reportFrom');
+  const reportToInput = document.getElementById('reportTo');
+  const btnDownloadOrders = document.getElementById('btnDownloadOrders');
+  const btnDownloadInventory = document.getElementById('btnDownloadInventory');
+  const ordersReportBody = document.getElementById('ordersReportBody');
+  const inventoryReportBody = document.getElementById('inventoryReportBody');
+
+  let allProducts = [];
+  let allOrders = [];
+  let allUsers = [];
+  let ordersUnsubscribe = null;
+  let usersUnsubscribe = null;
+
+  // ➤ LOGOUT BUTTON CLICK (NEW)
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);                 // Firebase log out
+        localStorage.removeItem('userRole'); // Clear saved role
+        window.location.href = 'index.html'; // Back to landing / login
+      } catch (err) {
+        console.error('Error logging out:', err);
+        alert('Logout failed. Please try again.');
+      }
+    });
+  }
+
+  // ROLE-BASED ACCESS CONTROL
+  let currentUserRole = null;
+
+  const ROLE_PERMISSIONS = {
+    admin: {
+      adminPanel: true,
+      manageUsers: true,
+      manageProducts: true,
+      reports: true,
+      notifications: true,
+      systemConfig: true,
+      activityLogs: true
+    },
+    manager: {
+      adminPanel: true,
+      manageUsers: true,
+      manageProducts: true,
+      reports: true,
+      notifications: true,
+      systemConfig: true,
+      activityLogs: true
+    },
+    supervisor: {
+      adminPanel: true,
+      manageUsers: true,
+      manageProducts: true,
+      reports: true,
+      notifications: true,
+      systemConfig: false,
+      activityLogs: false
+    },
+    user: {
+      adminPanel: false,
+      manageUsers: false,
+      manageProducts: false,
+      reports: false,
+      notifications: false,
+      systemConfig: false,
+      activityLogs: false
+    }
+  };
+
+  function applyRoleUI(role) {
+    currentUserRole = role;
+    const perms = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS["user"];
+
+    if (adminSection) {
+      adminSection.style.display = perms.adminPanel ? "block" : "none";
+    }
+
+    if (btnAdmin) {
+      btnAdmin.style.display = perms.adminPanel ? "block" : "none";
+    }
+
+    if (adminPanelSection && !perms.adminPanel) {
+      adminPanelSection.style.display = "none";
+    }
+
+    const cardManageUsers = document.getElementById("cardManageUsers");
+    const cardManageProducts = document.getElementById("cardManageProducts");
+    const cardReports = document.getElementById("cardReports");
+    const cardNotifications = document.getElementById("cardNotifications");
+    const cardSystemConfig = document.getElementById("cardSystemConfig");
+    const cardActivityLogs = document.getElementById("cardActivityLogs");
+
+    if (cardManageUsers) cardManageUsers.style.display = perms.manageUsers ? "block" : "none";
+    if (cardManageProducts) cardManageProducts.style.display = perms.manageProducts ? "block" : "none";
+    if (cardReports) cardReports.style.display = perms.reports ? "block" : "none";
+    if (cardNotifications) cardNotifications.style.display = perms.notifications ? "block" : "none";
+    if (cardSystemConfig) cardSystemConfig.style.display = perms.systemConfig ? "block" : "none";
+    if (cardActivityLogs) cardActivityLogs.style.display = perms.activityLogs ? "block" : "none";
+  }
+
+  // NAV
+  function switchSection(sectionId){
+    document.querySelectorAll('.section-container').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav button').forEach(b=>b.classList.remove('active'));
+
+    if(sectionId==='overview'){
+      overviewSection.classList.add('active');btnOverview.classList.add('active');
+    }
+    else if(sectionId==='orders'){
+      ordersSection.classList.add('active');btnOrders.classList.add('active');
+      if(!ordersUnsubscribe){subscribeOrders();}
+    }
+    else if(sectionId==='inventory'){
+      inventorySection.classList.add('active');btnInventory.classList.add('active');
+      updateFullStockTable(allProducts);
+    }
+    else if(sectionId==='admin'){
+      if (ROLE_PERMISSIONS[currentUserRole]?.adminPanel) {
+        adminPanelSection.classList.add('active');btnAdmin.classList.add('active');
+      }
+      else {
+        overviewSection.classList.add('active');btnOverview.classList.add('active');
+      }
+    }
+    else if(sectionId==='products'){
+      productManagementSection.classList.add('active');btnAdmin.classList.add('active');
+    }
+    else if(sectionId==='users'){
+      userManagementSection.classList.add('active');btnAdmin.classList.add('active');
+      if(!usersUnsubscribe){subscribeUsers();}
+    }
+  }
+
+  btnOverview.addEventListener('click',()=>switchSection('overview'));
+  btnOrders.addEventListener('click',()=>switchSection('orders'));
+  btnInventory.addEventListener('click',()=>switchSection('inventory'));
+  btnAdmin.addEventListener('click',()=>switchSection('admin'));
+
+  if (manageProductsBtn) {
+    manageProductsBtn.addEventListener('click', () => {
+      switchSection('products');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  }
+
+  if (manageUsersBtn) {
+    manageUsersBtn.addEventListener('click', () => {
+      switchSection('users');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  }
+
+  // AUTH
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    let role = "user";
+
+    const storedRole = localStorage.getItem("userRole");
+    if (storedRole) {
+      role = storedRole;
+    } else {
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          role = snap.data().role || "user";
+        }
+      } catch (err) {
+        console.error("Error checking user role:", err);
+      }
+    }
+
+    if (user.email === "admin@demo.com") {
+      role = "admin";
+    } else if (user.email === "manager@demo.com") {
+      role = "manager";
+    } else if (user.email === "supervisor@demo.com") {
+      role = "supervisor";
+    }
+
+    localStorage.setItem("userRole", role);
+
+    userInfoDiv.innerHTML = `<span></span><span>${user.email} (${role})</span>`;
+
+    applyRoleUI(role);
+    await loadDashboardMetrics();
+  });
+
+  // HELPERS
+  function updateGauge(id,value,max=100){
+    const gauge = document.getElementById(id);
+    if(!gauge) return;
+    const percentage = Math.min((value/max)*100,100);
+    const degrees = (percentage/100)*180;
+    let c1,c2;
+    if(percentage<33){c1='#ffebee';c2='#f44336';}
+    else if(percentage<66){c1='#fff3e0';c2='#ff9800';}
+    else{c1='#e8f5e9';c2='#4caf50';}
+    gauge.style.background=`conic-gradient(from 180deg, ${c1} 0deg, ${c2} ${degrees*2}deg, ${c1} ${degrees*2}deg)`;
+  }
+
+  function getOrderDateObj(order){
+    const v = order.orderDate;
+    if(!v) return null;
+    try{
+      if(typeof v.toDate==="function") return v.toDate();
+      if(typeof v.seconds==="number") return new Date(v.seconds*1000);
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    }catch{ return null;}
+  }
+
+  function formatOrderDate(v){
+    if(!v) return "-";
+    let d;
+    try{
+      if(typeof v.toDate==="function") d=v.toDate();
+      else if(typeof v.seconds==="number") d=new Date(v.seconds*1000);
+      else d=new Date(v);
+      if(!d || isNaN(d.getTime())) return "-";
+      return d.toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    }catch{return "-";}
+  }
+
+  function formatAmount(v){
+    if(v===undefined || v===null || v==="") return "-";
+    const n = Number(v);
+    if(isNaN(n)) return v;
+    return "Rs. "+n.toLocaleString("en-LK");
+  }
+
+  function downloadCSV(filename,headers,rows){
+    const esc=v=>{
+      if(v===null || v===undefined) return "";
+      const s=String(v).replace(/"/g,'""');
+      return `"${s}"`;
+    };
+    const lines=[];
+    lines.push(headers.map(esc).join(","));
+    rows.forEach(r=>lines.push(r.map(esc).join(",")));
+    const blob=new Blob([lines.join("\r\n")],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
+  // DASHBOARD METRICS
+  async function loadDashboardMetrics(){
+    try{
+      const snapshot = await getDocs(productsCollectionRef);
+
+      let totalProducts=0,outOfStock=0,totalStock=0,totalSales=0;
+      let totalReturns=0,totalBackOrders=0,totalOrdersCount=0,totalCost=0;
+      const products=[];
+
+      snapshot.forEach(docSnap=>{
+        const data=docSnap.data();
+        totalProducts++;
+        const stock=Number(data.stock||0);
+        const salesJan=Number(data.salesJan||0);
+        const salesFeb=Number(data.salesFeb||0);
+        const salesMar=Number(data.salesMar||0);
+        const returns=Number(data.returns||0);
+        const backOrder=Number(data.backOrder||0);
+        const onOrder=Number(data.onOrder||0);
+        const price=Number(data.price||0);
+
+        if(stock===0) outOfStock++;
+        totalStock+=stock;
+        totalSales+=(salesJan+salesFeb+salesMar);
+        totalReturns+=returns;
+        totalBackOrders+=backOrder;
+        totalOrdersCount+=onOrder;
+        totalCost+=(stock*price);
+
+        products.push({
+          id: docSnap.id,
+          name:data.name||docSnap.id,
+          code:data.code||docSnap.id,
+          stock,
+          onOrder,
+          price,
+          salesTotal:salesJan+salesFeb+salesMar,
+          ...data
+        });
+      });
+
+      allProducts=products;
+
+      const outOfStockPercent=totalProducts>0?((outOfStock/totalProducts)*100).toFixed(2):0;
+      const carryingRate=totalProducts>0?Math.min(((totalCost/(totalProducts*1000))*100),100).toFixed(2):0;
+      const turnoverRate=totalStock>0?(totalSales/totalStock).toFixed(2):0;
+      const salesRatio=totalSales>0?((totalStock/totalSales)*100).toFixed(2):0;
+      const returnRate=totalSales>0?((totalReturns/totalSales)*100).toFixed(2):0;
+      const backOrderRate=totalOrdersCount>0?((totalBackOrders/totalOrdersCount)*100).toFixed(2):0;
+
+      document.getElementById('carryingValue').textContent=carryingRate+'%';
+      document.getElementById('turnoverValue').textContent=turnoverRate;
+      document.getElementById('salesRatioValue').textContent=salesRatio+'%';
+      document.getElementById('outOfStockPercent').textContent=outOfStockPercent+'%';
+      document.getElementById('outOfStockCount').textContent=outOfStock;
+      document.getElementById('totalProductCount').textContent=totalProducts;
+      document.getElementById('returnRate').textContent=returnRate+'%';
+      document.getElementById('returnedUnits').textContent=totalReturns;
+      document.getElementById('backOrderRate').textContent=backOrderRate+'%';
+      document.getElementById('backOrders').textContent=totalBackOrders;
+
+      updateGauge('carryingGauge',parseFloat(carryingRate),100);
+      updateGauge('turnoverGauge',parseFloat(turnoverRate),5);
+      updateGauge('salesRatioGauge',parseFloat(salesRatio),100);
+
+      updateStockTable(products);
+      updateFullStockTable(products);
+      renderProductManagementTable(products);
+    }catch(err){
+      console.error("Error loading dashboard metrics:",err);
+      if (stockTableBody) {
+        stockTableBody.innerHTML=`
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-icon"></div>
+                <div>Error loading data. Please refresh the page.</div>
+              </div>
+            </td>
+          </tr>`;
+      }
+    }
+  }
+
+  // ORDERS
+  function subscribeOrders(){
+    const ordersRef = collection(db,"Orders");
+    const ordersQuery = query(ordersRef,orderBy("orderDate","desc"));
+
+    ordersUnsubscribe = onSnapshot(ordersQuery,snapshot=>{
+      allOrders=[];
+      snapshot.forEach(docSnap=>allOrders.push({id:docSnap.id,...docSnap.data()}));
+      renderOrdersTable(allOrders);
+    },err=>{
+      console.error("Error listening to orders:",err);
+      const tbody=document.getElementById("ordersTableBody");
+      tbody.innerHTML=`
+        <tr>
+          <td colspan="12">
+            <div class="empty-state">
+              <div class="empty-state-icon"></div>
+              <div>Error loading orders. Please refresh the page.</div>
+            </div>
+          </td>
+        </tr>`;
+    });
+  }
+
+  function renderOrdersTable(orders){
+    const tbody=document.getElementById("ordersTableBody");
+    if(!orders || orders.length===0){
+      tbody.innerHTML=`
+        <tr>
+          <td colspan="12">
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div>No orders found.</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    tbody.innerHTML="";
+    orders.forEach(order=>{
+      const tr=document.createElement("tr");
+      const niceDate=formatOrderDate(order.orderDate);
+      const niceAmount=formatAmount(order.totalAmount);
+      tr.innerHTML=`
+        <td>${order.orderId || order.id}</td>
+        <td>${order.customerName || "-"}</td>
+        <td>${order.customerEmail || "-"}</td>
+        <td>${order.customerPhone || "-"}</td>
+        <td>${order.assignedTo || "-"}</td>
+        <td>${order.items || "-"}</td>
+        <td>${niceDate}</td>
+        <td>${order.paymentMethod || "-"}</td>
+        <td>${order.paymentStatus || "-"}</td>
+        <td style="text-align:center;">${order.quantity || "-"}</td>
+        <td style="text-align:right;">${niceAmount}</td>
+        <td>${order.shippingAddress || "-"}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // INVENTORY TABLES
+  function updateStockTable(products){
+    if(!stockTableBody) return;
+    if(products.length===0){
+      stockTableBody.innerHTML=`
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="empty-state-icon"></div>
+              <div>No products found in inventory</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    stockTableBody.innerHTML='';
+    products.sort((a,b)=>a.stock-b.stock);
+    products.slice(0,10).forEach(product=>{
+      let statusIcon,statusText,statusBadge;
+      if(product.stock===0){statusIcon='🔴';statusText='Out of Stock';statusBadge='status-low';}
+      else if(product.stock<100){statusIcon='🟡';statusText='Low Stock';statusBadge='status-normal';}
+      else{statusIcon='🟢';statusText='In Stock';statusBadge='status-good';}
+      const row=document.createElement('tr');
+      row.innerHTML=`
+        <td><strong>${product.name}</strong></td>
+        <td>${product.code}</td>
+        <td><strong>${product.stock}</strong> units</td>
+        <td>${product.onOrder || 0} units</td>
+        <td>${statusIcon}<span class="status-badge ${statusBadge}">${statusText}</span></td>`;
+      row.addEventListener('click',()=>{
+        window.open(`product-details.html?code=${encodeURIComponent(product.code)}`,'_blank');
+      });
+      stockTableBody.appendChild(row);
+    });
+  }
+
+  function updateFullStockTable(products){
+    if(!fullStockTableBody) return;
+    if(products.length===0){
+      fullStockTableBody.innerHTML=`
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-state-icon"></div>
+              <div>No products found in inventory</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    fullStockTableBody.innerHTML='';
+    products.sort((a,b)=>a.stock-b.stock);
+    products.forEach(product=>{
+      let statusIcon,statusText,statusBadge;
+      if(product.stock===0){statusIcon='🔴';statusText='Out of Stock';statusBadge='status-low';}
+      else if(product.stock<100){statusIcon='🟡';statusText='Low Stock';statusBadge='status-normal';}
+      else{statusIcon='🟢';statusText='In Stock';statusBadge='status-good';}
+      const row=document.createElement('tr');
+      row.innerHTML=`
+        <td><strong>${product.name}</strong></td>
+        <td>${product.code}</td>
+        <td>${formatAmount(product.price)}</td>
+        <td><strong>${product.stock}</strong> units</td>
+        <td>${product.onOrder || 0} units</td>
+        <td>${product.salesTotal || 0} units</td>
+        <td>${statusIcon}<span class="status-badge ${statusBadge}">${statusText}</span></td>`;
+      row.addEventListener('click',()=>{
+        window.open(`product-details.html?code=${encodeURIComponent(product.code)}`,'_blank');
+      });
+      fullStockTableBody.appendChild(row);
+    });
+  }
+
+  // PRODUCT MANAGEMENT TABLE (CRUD)
+  function renderProductManagementTable(products){
+    if(!productManagementTableBody) return;
+    if(products.length===0){
+      productManagementTableBody.innerHTML=`
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <div class="empty-state-icon"></div>
+              <div>No products found.</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    productManagementTableBody.innerHTML='';
+    products.sort((a,b)=>a.stock-b.stock);
+    products.forEach(product=>{
+      let statusIcon,statusText,statusBadge;
+      if(product.stock===0){statusIcon='🔴';statusText='Out of Stock';statusBadge='status-low';}
+      else if(product.stock<100){statusIcon='🟡';statusText='Low Stock';statusBadge='status-normal';}
+      else{statusIcon='🟢';statusText='In Stock';statusBadge='status-good';}
+      const row=document.createElement('tr');
+      row.innerHTML=`
+        <td><strong>${product.name}</strong></td>
+        <td>${product.code}</td>
+        <td>${formatAmount(product.price)}</td>
+        <td>${product.stock} units</td>
+        <td>${product.onOrder || 0} units</td>
+        <td>${product.salesTotal || 0} units</td>
+        <td>${statusIcon}<span class="status-badge ${statusBadge}">${statusText}</span></td>
+        <td>
+          <button class="btn-edit-product" data-id="${product.id}"
+                  style="padding:4px 8px;border:none;border-radius:6px;background:#3498db;color:#fff;font-size:12px;cursor:pointer;margin-right:4px;">
+            Edit
+          </button>
+          <button class="btn-delete-product" data-id="${product.id}"
+                  style="padding:4px 8px;border:none;border-radius:6px;background:#3498db;color:#fff;font-size:12px;cursor:pointer;">
+            Delete
+          </button>
+        </td>`;
+      productManagementTableBody.appendChild(row);
+    });
+  }
+
+  // PRODUCT MANAGEMENT EVENTS
+  if (btnAddProduct) {
+    btnAddProduct.addEventListener('click', () => {
+      productDocIdInput.value = '';
+      productNameInput.value = '';
+      productCodeInput.value = '';
+      productPriceInput.value = '';
+      productStockInput.value = '';
+      productOnOrderInput.value = '';
+      productFormContainer.style.display = 'block';
+      productNameInput.focus();
+    });
+  }
+
+  if (btnCancelEdit) {
+    btnCancelEdit.addEventListener('click', () => {
+      productFormContainer.style.display = 'none';
+    });
+  }
+
+  if (productFormEl) {
+    productFormEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        name: productNameInput.value.trim(),
+        code: productCodeInput.value.trim(),
+        price: Number(productPriceInput.value || 0),
+        stock: Number(productStockInput.value || 0),
+        onOrder: Number(productOnOrderInput.value || 0)
+      };
+      if (!payload.name || !payload.code) {
+        alert('Please enter product name and code.');
+        return;
+      }
+      try {
+        const id = productDocIdInput.value.trim();
+        if (id) {
+          await updateDoc(doc(db, 'products', id), payload);
+          await addLog("Updated product", payload.name);
+        } else {
+          await addDoc(productsCollectionRef, payload);
+          await addLog("Created product", payload.name);
+        }
+        productFormContainer.style.display = 'none';
+        await loadDashboardMetrics();
+        alert('Product saved successfully.');
+      } catch (err) {
+        console.error('Error saving product:', err);
+        alert('Error saving product. See console.');
+      }
+    });
+  }
+
+  if (productManagementTableBody) {
+    productManagementTableBody.addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('.btn-edit-product');
+      const deleteBtn = e.target.closest('.btn-delete-product');
+      if (editBtn) {
+        const id = editBtn.getAttribute('data-id');
+        const product = allProducts.find(p => p.id === id);
+        if (!product) return;
+        productDocIdInput.value = id;
+        productNameInput.value = product.name || '';
+        productCodeInput.value = product.code || '';
+        productPriceInput.value = product.price || '';
+        productStockInput.value = product.stock || '';
+        productOnOrderInput.value = product.onOrder || '';
+        productFormContainer.style.display = 'block';
+        productNameInput.focus();
+      }
+      if (deleteBtn) {
+        const id = deleteBtn.getAttribute('data-id');
+        const product = allProducts.find(p => p.id === id);
+        const name = product ? product.name : id;
+        if (!confirm('Delete this product?')) return;
+        try {
+          await deleteDoc(doc(db, 'products', id));
+          await addLog("Deleted product", name);
+          await loadDashboardMetrics();
+          alert('Product deleted.');
+        } catch (err) {
+          console.error('Error deleting product:', err);
+          alert('Error deleting product. See console.');
+        }
+      }
+    });
+  }
+
+  // USER MANAGEMENT
+  function subscribeUsers() {
+    const usersRef = collection(db, "users");
+    usersUnsubscribe = onSnapshot(usersRef, snapshot => {
+      allUsers = [];
+      snapshot.forEach(docSnap => {
+        allUsers.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderUsersTable(allUsers);
+      updateUserStats(allUsers);
+    }, err => {
+      console.error("Error loading users:", err);
+      if (usersTableBody) {
+        usersTableBody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-icon"></div>
+                <div>Error loading users. Please refresh.</div>
+              </div>
+            </td>
+          </tr>`;
+      }
+    });
+  }
+
+  function renderUsersTable(list) {
+    if (!usersTableBody) return;
+    if (!list || list.length === 0) {
+      usersTableBody.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <div class="empty-state-icon">👥</div>
+              <div>No users found.</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+    usersTableBody.innerHTML = '';
+    list.forEach(user => {
+      const status = user.status || 'active';
+      const role = user.role || 'user';
+      const statusClass = status === 'active' ? 'status-active' : 'status-disabled';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${user.name || '-'}</td>
+        <td>${user.email || '-'}</td>
+        <td>${role}</td>
+        <td>
+          <span class="status-badge ${statusClass}">
+            ${status.charAt(0).toUpperCase() + status.slice(1)}
+          </span>
+        </td>
+        <td>
+          <button class="btn-small btn-toggle-user"
+                  data-id="${user.id}"
+                  data-status="${status}">
+            ${status === 'active' ? 'Disable' : 'Enable'}
+          </button>
+          <button class="btn-small btn-reset-user"
+                  data-email="${user.email || ''}">
+            Reset Password
+          </button>
+        </td>`;
+      usersTableBody.appendChild(row);
+    });
+  }
+
+  function updateUserStats(list) {
+    if (!list) list = [];
+    if (totalUsersEl) totalUsersEl.textContent = list.length;
+    if (totalAdminsEl) totalAdminsEl.textContent = list.filter(u => u.role === 'admin').length;
+    if (totalActiveEl) totalActiveEl.textContent = list.filter(u => (u.status || 'active') === 'active').length;
+  }
+
+  if (userSearchInput) {
+    userSearchInput.addEventListener('input', () => {
+      const q = userSearchInput.value.toLowerCase();
+      const filtered = allUsers.filter(u =>
+        (u.name || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q)
+      );
+      renderUsersTable(filtered);
+    });
+  }
+
+  if (usersTableBody) {
+    usersTableBody.addEventListener('click', async (e) => {
+      const toggleBtn = e.target.closest('.btn-toggle-user');
+      const resetBtn = e.target.closest('.btn-reset-user');
+
+      if (toggleBtn) {
+        const id = toggleBtn.getAttribute('data-id');
+        const currentStatus = toggleBtn.getAttribute('data-status') || 'active';
+        const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+        if (!confirm(`Change status to "${newStatus}"?`)) return;
+        try {
+          await updateDoc(doc(db, 'users', id), { status: newStatus });
+          alert('User status updated.');
+        } catch (err) {
+          console.error('Error updating status:', err);
+          alert('Error updating status: ' + err.message);
+        }
+      }
+
+      if (resetBtn) {
+        const email = resetBtn.getAttribute('data-email');
+        if (!email) {
+          alert('No email found for this user.');
+          return;
+        }
+        if (!confirm(`Send password reset email to ${email}?`)) return;
+        try {
+          await sendPasswordResetEmail(auth, email);
+          alert('Password reset email sent.');
+        } catch (err) {
+          console.error('Error sending reset email:', err);
+          alert('Error sending reset email: ' + err.message);
+        }
+      }
+    });
+  }
+
+  // SEARCH (product code / order code)
+  searchInput.addEventListener("keydown",(e)=>{
+    if(e.key!=="Enter")return;
+    const code=searchInput.value.trim();
+    if(!code){alert("Please enter a product code");return;}
+    window.open(`product-details.html?code=${encodeURIComponent(code)}`,'_blank');
+    searchInput.value='';
+  });
+
+  setInterval(()=>{console.log("Auto-refreshing dashboard data...");loadDashboardMetrics();},300000);
+
+  console.log("CARGOMATE Warehouse Dashboard loaded successfully!");
+</script>
+
+</body>
+</html>

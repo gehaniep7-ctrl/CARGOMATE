@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Details - POLYMAX</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg,#f5f7fa 0%,#e8eef5 100%);
+      min-height: 100vh;
+      padding: 30px;
+    }
+    .container { max-width: 900px; margin:0 auto; }
+    .header-row {
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:24px;
+    }
+    .title { font-size:26px;font-weight:700;color:#2c3e50; }
+    .subtitle { color:#7f8c8d;margin-top:4px;font-size:14px; }
+    .btn-back {
+      padding:8px 16px;border:none;border-radius:8px;
+      background:#3498db;color:white;font-weight:600;cursor:pointer;
+    }
+    .card {
+      background:white;border-radius:16px;padding:24px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);margin-bottom:20px;
+    }
+    .label {
+      font-size:12px;font-weight:600;text-transform:uppercase;
+      color:#7f8c8d;margin-bottom:4px;
+    }
+    .value { font-size:16px;color:#2c3e50;margin-bottom:12px; }
+    .value strong { font-weight:700; }
+
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:16px;
+    }
+
+    .status-badge{
+      padding:6px 14px;border-radius:12px;font-size:12px;font-weight:600;
+      display:inline-block;
+    }
+    .status-good{background:#e8f5e9;color:#2e7d32;}
+    .status-low{background:#fff3e0;color:#ef6c00;}
+    .status-out{background:#ffebee;color:#c62828;}
+
+    .code-pill{
+      background:#ecf0f1;padding:4px 10px;border-radius:99px;
+      font-size:13px;font-weight:600;color:#34495e;
+    }
+
+    .loading,.message { text-align:center;margin-top:40px;color:#7f8c8d; }
+    .message strong { color:#c0392b; }
+
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header-row">
+    <div>
+      <div class="title">Product Details</div>
+      <div class="subtitle" id="subtitleText">Loading product...</div>
+    </div>
+    <button class="btn-back" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="loading">Loading product information...</div>
+
+  <!-- Error message -->
+  <div id="message" class="message" style="display:none;"></div>
+
+  <!-- Content -->
+  <div id="content" style="display:none;">
+
+    <!-- BASIC INFO -->
+    <div class="card">
+      <div class="grid">
+        <div>
+          <div class="label">Product Name</div>
+          <div class="value"><strong id="prodName">-</strong></div>
+        </div>
+
+        <div>
+          <div class="label">Product Code</div>
+          <div class="value"><span class="code-pill" id="prodCode">-</span></div>
+        </div>
+
+        <div>
+          <div class="label">Price (Rs.)</div>
+          <div class="value" id="prodPrice">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT IMAGE -->
+    <div class="card" id="imageCard" style="text-align:center; display:none;">
+      <img id="prodImage"
+           src=""
+           style="max-width:300px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);"
+           alt="Product Image">
+    </div>
+
+    <!-- INVENTORY OVERVIEW -->
+    <div class="card">
+      <h3 style="margin-bottom:16px;color:#2c3e50;">Inventory Overview</h3>
+      <div class="grid">
+        <div>
+          <div class="label">Units in Hand</div>
+          <div class="value"><strong id="prodStock">0</strong> units</div>
+        </div>
+        <div>
+          <div class="label">Units on Order</div>
+          <div class="value"><strong id="prodOnOrder">0</strong> units</div>
+        </div>
+        <div>
+          <div class="label">Total Sales</div>
+          <div class="value"><strong id="prodSales">0</strong> units</div>
+        </div>
+        <div>
+          <div class="label">Status</div>
+          <div class="value">
+            <span id="prodStatusBadge" class="status-badge status-good">In Stock</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- FIREBASE SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    where,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+    storageBucket: "ware-house-robot.firebasestorage.app",
+    messagingSenderId: "1053408602269",
+    appId: "1:1053408602269:web:fb276014330b5161488c74",
+    measurementId: "G-73HM1FJ2FM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+
+  const loadingEl = document.getElementById("loading");
+  const messageEl = document.getElementById("message");
+  const contentEl = document.getElementById("content");
+
+  const prodNameEl = document.getElementById("prodName");
+  const prodCodeEl = document.getElementById("prodCode");
+  const prodPriceEl = document.getElementById("prodPrice");
+  const prodStockEl = document.getElementById("prodStock");
+  const prodOnOrderEl = document.getElementById("prodOnOrder");
+  const prodSalesEl = document.getElementById("prodSales");
+  const prodStatusBadge = document.getElementById("prodStatusBadge");
+
+  const imageCard = document.getElementById("imageCard");
+  const prodImage = document.getElementById("prodImage");
+
+
+  function setStatus(stock) {
+    if (stock === 0) {
+      prodStatusBadge.textContent = "Out of Stock";
+      prodStatusBadge.className = "status-badge status-out";
+    } else if (stock < 100) {
+      prodStatusBadge.textContent = "Low Stock";
+      prodStatusBadge.className = "status-badge status-low";
+    } else {
+      prodStatusBadge.textContent = "In Stock";
+      prodStatusBadge.className = "status-badge status-good";
+    }
+  }
+
+
+  async function loadProduct(code) {
+    try {
+      const productsRef = collection(db, "products");
+      const q = query(productsRef, where("code", "==", code));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        loadingEl.style.display = "none";
+        messageEl.style.display = "block";
+        messageEl.innerHTML = `<strong>No product found</strong> with code "${code}"`;
+        return;
+      }
+
+      const data = snap.docs[0].data();
+
+      prodNameEl.textContent = data.name;
+      prodCodeEl.textContent = data.code;
+      prodPriceEl.textContent = "Rs. " + data.price;
+      prodStockEl.textContent = data.stock;
+      prodOnOrderEl.textContent = data.onOrder;
+      prodSalesEl.textContent = (data.salesJan || 0) + (data.salesFeb || 0) + (data.salesMar || 0);
+
+      setStatus(Number(data.stock));
+
+      // SHOW IMAGE IF EXISTS
+      if (data.imageUrl) {
+        prodImage.src = data.imageUrl;
+        imageCard.style.display = "block";
+      }
+
+      loadingEl.style.display = "none";
+      contentEl.style.display = "block";
+
+    } catch (err) {
+      console.error("Error:", err);
+      loadingEl.style.display = "none";
+      messageEl.style.display = "block";
+      messageEl.innerHTML = "<strong>Error</strong> loading product.";
+    }
+  }
+
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    if (!code) {
+      loadingEl.style.display = "none";
+      messageEl.style.display = "block";
+      messageEl.innerHTML = "No product code provided.";
+      return;
+    }
+
+    loadProduct(code);
+  });
+
+</script>
+
+</body>
+</html>
+

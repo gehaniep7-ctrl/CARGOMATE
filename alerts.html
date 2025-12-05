@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory Alerts - POLYMAX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background:linear-gradient(135deg,#f5f7fa 0%,#e8eef5 100%);
+      min-height:100vh;
+    }
+
+    .page-wrapper{
+      max-width:1100px;
+      margin:40px auto;
+      padding:0 20px 40px;
+    }
+
+    .top-bar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:24px;
+    }
+    .logo{
+      font-size:26px;
+      font-weight:700;
+      color:#3498db;
+      letter-spacing:2px;
+    }
+    .user-info{
+      font-size:14px;
+      color:#2c3e50;
+    }
+    .back-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 14px;
+      border-radius:8px;
+      border:none;
+      background:#3498db;
+      color:#fff;
+      font-size:13px;
+      cursor:pointer;
+      margin-bottom:20px;
+    }
+
+    .card{
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 8px 18px rgba(0,0,0,0.06);
+      padding:24px 26px;
+    }
+
+    .page-title{
+      font-size:26px;
+      color:#2c3e50;
+      margin-bottom:6px;
+    }
+    .page-subtitle{
+      font-size:14px;
+      color:#7f8c8d;
+      margin-bottom:18px;
+    }
+
+    .alert-card{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      padding:12px 16px;
+      margin-bottom:10px;
+      border-radius:12px;
+      background:#ffe5e5;
+      border:1px solid #e74c3c;
+      color:#c0392b;
+      font-size:14px;
+    }
+    .alert-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .alert-name{
+      font-weight:700;
+      font-size:15px;
+    }
+    .alert-message{
+      font-size:13px;
+    }
+    .alert-right{
+      text-align:right;
+      font-weight:600;
+      font-size:14px;
+    }
+
+    .badge-critical{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#c0392b;
+      color:#fff;
+      font-size:11px;
+      margin-left:6px;
+    }
+
+    .empty-state{
+      text-align:center;
+      padding:40px 10px 20px;
+      color:#7f8c8d;
+    }
+    .empty-icon{
+      font-size:40px;
+      margin-bottom:10px;
+      opacity:0.3;
+    }
+
+    @media(max-width:600px){
+      .alert-card{
+        flex-direction:column;
+        gap:8px;
+      }
+      .alert-right{text-align:left;}
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="logo">POLYMAX</div>
+    <div class="user-info" id="userEmail">Loading user...</div>
+  </div>
+
+  <button class="back-btn" onclick="window.location.href='dashboard.html'">
+    ← Back to Admin Panel
+  </button>
+
+  <div class="card">
+    <h1 class="page-title">Inventory Alerts</h1>
+    <p class="page-subtitle">
+      Showing all products where stock is below <strong>100 units</strong>.
+    </p>
+
+    <div id="alertsContainer">
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div>Loading alerts...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE & SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+    storageBucket: "ware-house-robot.firebasestorage.app",
+    messagingSenderId: "1053408602269",
+    appId: "1:1053408602269:web:fb276014330b5161488c74",
+    measurementId: "G-73HM1FJ2FM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const userEmailSpan = document.getElementById("userEmail");
+  const alertsContainer = document.getElementById("alertsContainer");
+
+  // 1) Check user is logged in
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+    userEmailSpan.textContent = user.email;
+
+    // 2) After authentication, load alerts
+    await loadAlerts();
+  });
+
+  async function loadAlerts() {
+    try {
+      const productsRef = collection(db, "products");
+      const snapshot = await getDocs(productsRef);
+
+      const lowStock = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const stock = Number(data.stock || 0);
+        if (stock < 100) {
+          lowStock.push({
+            name: data.name || docSnap.id,
+            stock
+          });
+        }
+      });
+
+      renderAlerts(lowStock);
+    } catch (err) {
+      console.error("Error loading alerts:", err);
+      alertsContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div>Error loading alerts. Please refresh the page.</div>
+        </div>`;
+    }
+  }
+
+  function renderAlerts(list) {
+    if (!list || list.length === 0) {
+      alertsContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">✅</div>
+          <div>All good! No products are below 100 units.</div>
+        </div>`;
+      return;
+    }
+
+    list.sort((a,b) => a.stock - b.stock);
+
+    let html = "";
+    list.forEach(p => {
+      let message;
+      let badge = "";
+
+      if (p.stock <= 0) {
+        message = "OUT OF STOCK – please restock immediately.";
+        badge = '<span class="badge-critical">Out of stock</span>';
+      } else if (p.stock <= 50) {
+        message = "Critical level – please restock as soon as possible.";
+        badge = '<span class="badge-critical">Critical</span>';
+      } else {
+        message = "Low stock – please plan to restock soon.";
+      }
+
+      html += `
+        <div class="alert-card">
+          <div class="alert-left">
+            <div class="alert-name">${p.name} ${badge}</div>
+            <div class="alert-message">${message}</div>
+          </div>
+          <div class="alert-right">
+            Units left: ${p.stock}
+          </div>
+        </div>
+      `;
+    });
+
+    alertsContainer.innerHTML = html;
+  }
+</script>
+</body>
+</html>

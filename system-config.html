@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Configuration - POLYMAX</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background:linear-gradient(135deg,#f5f7fa 0%,#e8eef5 100%);
+      min-height:100vh;
+      color:#2c3e50;
+    }
+    .page{
+      max-width:1100px;
+      margin:30px auto;
+      padding:0 20px 40px;
+    }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+    .title-block h1{
+      font-size:26px;
+      margin-bottom:6px;
+    }
+    .title-block p{
+      color:#7f8c8d;
+      font-size:14px;
+    }
+    .btn{
+      padding:8px 16px;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+    }
+    .btn-primary{background:#3498db;color:white;}
+    .btn-secondary{background:#ecf0f1;color:#2c3e50;}
+    .btn-danger{background:#e74c3c;color:white;}
+
+    .card{
+      background:white;
+      border-radius:16px;
+      padding:20px 22px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.08);
+      margin-bottom:18px;
+    }
+    .card h2{
+      font-size:18px;
+      margin-bottom:6px;
+    }
+    .card small{
+      color:#7f8c8d;
+      font-size:12px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:16px;
+      margin-top:14px;
+    }
+    .form-group{
+      display:flex;
+      flex-direction:column;
+      margin-bottom:12px;
+    }
+    .form-group label{
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:4px;
+    }
+    .form-group span.help{
+      font-size:11px;
+      color:#95a5a6;
+      margin-top:2px;
+    }
+    input[type="number"],
+    input[type="text"],
+    select{
+      padding:7px 10px;
+      border-radius:8px;
+      border:1px solid #d0d7e2;
+      font-size:13px;
+      outline:none;
+    }
+    input:focus,select:focus{
+      border-color:#3498db;
+      box-shadow:0 0 0 2px rgba(52,152,219,0.15);
+    }
+    .switch-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .switch-row-label{
+      font-size:13px;
+    }
+    .badge-role{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      background:#ecf0f1;
+      margin-left:6px;
+    }
+    .status-text{
+      font-size:12px;
+      color:#7f8c8d;
+      margin-top:8px;
+    }
+    .footer-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:14px;
+    }
+    .pill{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      background:#ecf0f1;
+      margin-right:6px;
+    }
+    .alert{
+      margin-top:14px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#fef9e7;
+      border-left:4px solid #f1c40f;
+      font-size:12px;
+      color:#7d6608;
+    }
+    .loading{
+      font-size:12px;
+      color:#7f8c8d;
+      margin-top:6px;
+    }
+    @media(max-width:600px){
+      .header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="title-block">
+      <h1>System Configuration</h1>
+      <p>Manage global warehouse rules, notification thresholds and maintenance windows.</p>
+    </div>
+    <div>
+      <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+    </div>
+  </div>
+
+  <!-- WAREHOUSE RULES -->
+  <div class="card">
+    <h2>Warehouse Rules</h2>
+    <small>These global rules are used across inventory calculations and alerts.</small>
+
+    <div class="grid-2" style="margin-top:12px;">
+      <div>
+        <div class="form-group">
+          <label for="defaultReorderLevel">Default reorder level (units)</label>
+          <input type="number" id="defaultReorderLevel" min="0" value="50">
+          <span class="help">Used when a product does not have its own reorder level.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="lowStockThreshold">Low stock % threshold</label>
+          <input type="number" id="lowStockThreshold" min="1" max="100" value="20">
+          <span class="help">Below this percentage, products are flagged as low stock.</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="form-group">
+          <label for="defaultCurrency">Default currency</label>
+          <select id="defaultCurrency">
+            <option value="LKR">LKR - Sri Lankan Rupee</option>
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="timezone">Warehouse timezone</label>
+          <input type="text" id="timezone" placeholder="Asia/Colombo">
+          <span class="help">Used when displaying order and log timestamps.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="card">
+    <h2>Notification & Alert Settings</h2>
+    <small>Control when emails / alerts are triggered.</small>
+
+    <div style="margin-top:12px;">
+      <div class="switch-row">
+        <div class="switch-row-label">
+          Enable email notifications
+          <span class="pill">global</span>
+        </div>
+        <label>
+          <input type="checkbox" id="enableEmailAlerts"> Enable
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div class="switch-row-label">
+          Notify when product hits zero stock
+        </div>
+        <label>
+          <input type="checkbox" id="notifyZeroStock"> Enable
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="alertsEmail">Alerts recipient email</label>
+        <input type="text" id="alertsEmail" placeholder="warehouse.manager@demo.com">
+        <span class="help">Where low-stock and critical alerts should be sent.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="dailySummaryTime">Daily summary time (24h)</label>
+        <input type="text" id="dailySummaryTime" placeholder="18:00">
+        <span class="help">Time of day to generate daily inventory / orders summary.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLE RULES -->
+  <div class="card">
+    <h2>Role-based Permissions Overview</h2>
+    <small>High-level control of what each role can access in the system.</small>
+
+    <div class="grid-2" style="margin-top:12px;">
+      <div>
+        <p><strong>Admin</strong><span class="badge-role">full access</span></p>
+        <p class="status-text">
+          Can change all settings, manage users, view logs, and export reports.
+        </p>
+      </div>
+      <div>
+        <p><strong>Manager</strong><span class="badge-role">operations</span></p>
+        <p class="status-text">
+          Can manage products and orders, view reports and alerts, but cannot change core system rules.
+        </p>
+      </div>
+      <div>
+        <p><strong>Supervisor</strong><span class="badge-role">restricted</span></p>
+        <p class="status-text">
+          Can view dashboards, approve orders and adjust stock, but has no access to user management.
+        </p>
+      </div>
+      <div>
+        <p><strong>Standard User</strong><span class="badge-role">read-only</span></p>
+        <p class="status-text">
+          Can view their assigned orders and basic inventory only.
+        </p>
+      </div>
+    </div>
+
+    <div class="alert">
+      These role rules are enforced in the dashboard using your Firestore “users” collection and
+      the email-based overrides (admin@demo.com, manager@demo.com, supervisor@demo.com).
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div class="card">
+    <h2>Maintenance & Backup</h2>
+    <small>Keep the system healthy and auditable.</small>
+
+    <div class="grid-2" style="margin-top:12px;">
+      <div>
+        <div class="form-group">
+          <label for="maintenanceWindow">Maintenance window</label>
+          <input type="text" id="maintenanceWindow" placeholder="Sunday 01:00 - 03:00">
+          <span class="help">Planned time for upgrades / downtime.</span>
+        </div>
+        <div class="form-group">
+          <label for="retentionDays">Activity log retention (days)</label>
+          <input type="number" id="retentionDays" min="1" value="365">
+          <span class="help">How long audit logs are kept in the system.</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="form-group">
+          <label for="backupFrequency">Backup frequency</label>
+          <select id="backupFrequency">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="backupLocation">Backup location description</label>
+          <input type="text" id="backupLocation" placeholder="Firestore export to Cloud Storage / manual export">
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-actions">
+      <button id="btnResetDefaults" class="btn btn-danger">Reset to defaults</button>
+      <button id="btnSaveConfig" class="btn btn-primary">Save settings</button>
+    </div>
+
+    <div id="saveStatus" class="loading"></div>
+  </div>
+</div>
+
+<!-- FIREBASE SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // SAME CONFIG AS DASHBOARD
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+    storageBucket: "ware-house-robot.firebasestorage.app",
+    messagingSenderId: "1053408602269",
+    appId: "1:1053408602269:web:fb276014330b5161488c74",
+    measurementId: "G-73HM1FJ2FM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // DOM refs
+  const defaultReorderLevel = document.getElementById('defaultReorderLevel');
+  const lowStockThreshold = document.getElementById('lowStockThreshold');
+  const defaultCurrency = document.getElementById('defaultCurrency');
+  const timezone = document.getElementById('timezone');
+
+  const enableEmailAlerts = document.getElementById('enableEmailAlerts');
+  const notifyZeroStock = document.getElementById('notifyZeroStock');
+  const alertsEmail = document.getElementById('alertsEmail');
+  const dailySummaryTime = document.getElementById('dailySummaryTime');
+
+  const maintenanceWindow = document.getElementById('maintenanceWindow');
+  const retentionDays = document.getElementById('retentionDays');
+  const backupFrequency = document.getElementById('backupFrequency');
+  const backupLocation = document.getElementById('backupLocation');
+
+  const btnSaveConfig = document.getElementById('btnSaveConfig');
+  const btnResetDefaults = document.getElementById('btnResetDefaults');
+  const saveStatus = document.getElementById('saveStatus');
+
+  // Simple default values to reset to
+  function setDefaultValues() {
+    defaultReorderLevel.value = 50;
+    lowStockThreshold.value = 20;
+    defaultCurrency.value = "LKR";
+    timezone.value = "Asia/Colombo";
+
+    enableEmailAlerts.checked = true;
+    notifyZeroStock.checked = true;
+    alertsEmail.value = "warehouse.manager@demo.com";
+    dailySummaryTime.value = "18:00";
+
+    maintenanceWindow.value = "Sunday 01:00 - 03:00";
+    retentionDays.value = 365;
+    backupFrequency.value = "daily";
+    backupLocation.value = "Firestore export / manual CSV export";
+  }
+
+  // Load config from Firestore
+  async function loadConfig() {
+    try {
+      saveStatus.textContent = "Loading configuration...";
+      const cfgRef = doc(db, "systemConfig", "global");
+      const snap = await getDoc(cfgRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.defaultReorderLevel !== undefined) defaultReorderLevel.value = data.defaultReorderLevel;
+        if (data.lowStockThreshold !== undefined) lowStockThreshold.value = data.lowStockThreshold;
+        if (data.defaultCurrency) defaultCurrency.value = data.defaultCurrency;
+        if (data.timezone) timezone.value = data.timezone;
+
+        if (data.enableEmailAlerts !== undefined) enableEmailAlerts.checked = data.enableEmailAlerts;
+        if (data.notifyZeroStock !== undefined) notifyZeroStock.checked = data.notifyZeroStock;
+        if (data.alertsEmail) alertsEmail.value = data.alertsEmail;
+        if (data.dailySummaryTime) dailySummaryTime.value = data.dailySummaryTime;
+
+        if (data.maintenanceWindow) maintenanceWindow.value = data.maintenanceWindow;
+        if (data.retentionDays !== undefined) retentionDays.value = data.retentionDays;
+        if (data.backupFrequency) backupFrequency.value = data.backupFrequency;
+        if (data.backupLocation) backupLocation.value = data.backupLocation;
+
+        saveStatus.textContent = "Configuration loaded.";
+      } else {
+        setDefaultValues();
+        saveStatus.textContent = "Using default configuration (no record found).";
+      }
+    } catch (err) {
+      console.error("Error loading config:", err);
+      saveStatus.textContent = "Error loading configuration. See console.";
+    }
+  }
+
+  // Save config to Firestore
+  async function saveConfig() {
+    try {
+      saveStatus.textContent = "Saving configuration...";
+      const cfgRef = doc(db, "systemConfig", "global");
+      await setDoc(cfgRef, {
+        defaultReorderLevel: Number(defaultReorderLevel.value || 0),
+        lowStockThreshold: Number(lowStockThreshold.value || 0),
+        defaultCurrency: defaultCurrency.value || "LKR",
+        timezone: timezone.value || "Asia/Colombo",
+
+        enableEmailAlerts: !!enableEmailAlerts.checked,
+        notifyZeroStock: !!notifyZeroStock.checked,
+        alertsEmail: alertsEmail.value || "",
+        dailySummaryTime: dailySummaryTime.value || "",
+
+        maintenanceWindow: maintenanceWindow.value || "",
+        retentionDays: Number(retentionDays.value || 0),
+        backupFrequency: backupFrequency.value || "daily",
+        backupLocation: backupLocation.value || ""
+      }, { merge: true });
+
+      saveStatus.textContent = "Configuration saved successfully.";
+    } catch (err) {
+      console.error("Error saving config:", err);
+      saveStatus.textContent = "Error saving configuration. See console.";
+    }
+  }
+
+  btnSaveConfig.addEventListener('click', saveConfig);
+  btnResetDefaults.addEventListener('click', () => {
+    if (!confirm("Reset all settings to default values?")) return;
+    setDefaultValues();
+    saveConfig();
+  });
+
+  // Protect page – require login
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+    // We could also enforce only admin / manager, but for now any logged user can see it.
+    loadConfig();
+  });
+</script>
+</body>
+</html>
