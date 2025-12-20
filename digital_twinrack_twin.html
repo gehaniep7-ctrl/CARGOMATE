@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rack Digital Twin</title>
+  <style>
+    body{font-family:Arial;background:#f4f6f9;margin:0;padding:20px;}
+    h1{margin:0 0 8px 0;}
+    .sub{color:#555;margin:0 0 16px 0;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+    .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+    .badge{font-size:12px;color:#fff;padding:4px 10px;border-radius:999px;}
+    .OK{background:green;}
+    .WARNING{background:orange;}
+    .CRITICAL{background:red;}
+    .bar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:8px;}
+    .fill{height:100%;background:#2c7be5;width:0%;}
+    small{color:#666;}
+  </style>
+</head>
+<body>
+  <h1>Rack Digital Twin</h1>
+  <p class="sub">Live rack status (updates every 2 seconds)</p>
+
+  <div id="grid" class="grid"></div>
+
+  <script>
+    function statusByPercent(p){
+      if(p >= 95) return "CRITICAL";
+      if(p >= 80) return "WARNING";
+      return "OK";
+    }
+
+    async function load(){
+      const res = await fetch("./racks.json");
+      const racks = await res.json();
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+
+      racks.forEach(r=>{
+        const percent = Math.round((r.current / r.capacity) * 100);
+        const status = statusByPercent(percent);
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="row">
+            <h3 style="margin:0">${r.rackId} (Zone ${r.zone})</h3>
+            <span class="badge ${status}">${status}</span>
+          </div>
+          <p style="margin:10px 0 6px 0"><b>Item:</b> ${r.item}</p>
+          <p style="margin:0"><b>Stock:</b> ${r.current} / ${r.capacity} (${percent}%)</p>
+          <div class="bar"><div class="fill" style="width:${percent}%"></div></div>
+          <p style="margin:10px 0 0 0"><small>Last Updated: ${r.lastUpdated}</small></p>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    load();
+    setInterval(load, 2000);
+  </script>
+</body>
+</html>
