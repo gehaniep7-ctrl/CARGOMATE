@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rack Digital Twin (2D + 3D)</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --line:#e2e8f0; --shadow:0 8px 24px rgba(15,23,42,.08);
+      --shadow2:0 2px 10px rgba(15,23,42,.06);
+      --brand:#2563eb; --ok:#16a34a; --warn:#f59e0b; --crit:#ef4444; --radius:16px;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text);}
+    .topbar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.90);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+    .topbar-inner{max-width:1280px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .brand{display:flex;align-items:center;gap:10px;}
+    .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--brand),#22c55e);box-shadow:var(--shadow2);}
+    .titleWrap{display:flex;flex-direction:column;line-height:1.1;}
+    .title{font-size:16px;font-weight:800;margin:0;}
+    .subtitle{font-size:12px;color:var(--muted);margin:0;}
+    .rightBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+    .chip{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);padding:8px 10px;border-radius:999px;box-shadow:var(--shadow2);}
+    .tabs{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff;box-shadow:var(--shadow2);}
+    .tabBtn{font-size:12px;padding:8px 12px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-weight:800;}
+    .tabBtn.active{background:#0f172a;color:#fff;}
+    .msg{max-width:1280px;margin:12px auto 0 auto;padding:0 18px;font-size:12px;color:var(--muted);}
+    .msg strong{color:#0f172a;}
+    .page{max-width:1280px;margin:0 auto;padding:18px;}
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start;}
+    @media(max-width:980px){.grid{grid-template-columns:1fr;}}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .panelHead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .panelHead h2{margin:0;font-size:14px;font-weight:800;}
+    .panelHead p{margin:0;font-size:12px;color:var(--muted);}
+    .panelBody{padding:16px;}
+    .cards{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:12px;}
+    @media(max-width:720px){.cards{grid-template-columns:1fr;}}
+    .card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow2);padding:14px;}
+    .cardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+    .cardTitle{margin:0;font-size:14px;font-weight:900;}
+    .cardMeta{font-size:12px;color:var(--muted);margin-top:4px;}
+    .badge{font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;color:#fff;display:inline-flex;align-items:center;gap:6px;}
+    .dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;}
+    .OK{background:var(--ok);} .WARNING{background:var(--warn);} .CRITICAL{background:var(--crit);}
+    .bar{height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;margin-top:10px;border:1px solid #dbeafe;}
+    .fill{height:100%;width:0%;background:linear-gradient(90deg,#60a5fa,var(--brand));}
+    .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
+    .legend span{display:flex;align-items:center;gap:6px;}
+    .lgdot{width:10px;height:10px;border-radius:50%;}
+    .lg-ok{background:var(--ok);} .lg-warn{background:var(--warn);} .lg-crit{background:var(--crit);}
+    .map{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+    .cell{border:1px dashed #dbe3ef;border-radius:14px;padding:10px;min-height:74px;background:linear-gradient(180deg,#fff,#fbfcff);box-shadow:var(--shadow2);display:flex;flex-direction:column;justify-content:space-between;}
+    .empty{opacity:.55;box-shadow:none;background:#fff;}
+    .cellTop{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:12px;}
+    .pill{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:#fff;font-weight:700;}
+    .cellBottom{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;}
+    .statusDot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 4px rgba(0,0,0,.03);}
+    .sd-ok{background:var(--ok);} .sd-warn{background:var(--warn);} .sd-crit{background:var(--crit);}
+    .threeWrap{height:540px;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow2);background:#0b1220;position:relative;}
+    @media(max-width:980px){.threeWrap{height:420px;}}
+    .threeHud{position:absolute;top:10px;left:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;}
+    .hudPill{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.35);color:#0f172a;font-weight:800;}
+    .helpText{position:absolute;bottom:10px;left:10px;right:10px;color:rgba(255,255,255,.75);font-size:12px;z-index:2;display:flex;justify-content:space-between;}
+    .view{display:none;} .view.active{display:block;}
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+          <p class="title">Rack Digital Twin</p>
+          <p class="subtitle">Live rack status • real-time from Firebase</p>
+        </div>
+      </div>
+      <div class="rightBar">
+        <div class="tabs">
+          <button class="tabBtn active" id="btn2d">2D View</button>
+          <button class="tabBtn" id="btn3d">3D View</button>
+        </div>
+        <div class="chip" id="chipTime">Last sync: —</div>
+        <div class="chip" id="chipCount">Racks: —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="msg" id="statusMsg"><strong>Connecting…</strong></div>
+  <div class="msg" id="debugMsg"></div>
+
+  <div class="page">
+    <div class="view active" id="view2d">
+      <div class="grid">
+        <div class="panel">
+          <div class="panelHead">
+            <div><h2>Racks</h2><p>Overview of capacity and health</p></div>
+          </div>
+          <div class="panelBody"><div id="cardGrid" class="cards"></div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panelHead">
+            <div><h2>Warehouse Rack Map</h2><p>Layout view (row/col)</p></div>
+            <div class="legend">
+              <span><i class="lgdot lg-ok"></i>OK</span>
+              <span><i class="lgdot lg-warn"></i>Warning</span>
+              <span><i class="lgdot lg-crit"></i>Critical</span>
+            </div>
+          </div>
+          <div class="panelBody"><div id="map" class="map"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view3d">
+      <div class="panel">
+        <div class="panelHead">
+          <div><h2>3D Warehouse Racks</h2><p>Rotate: drag • Zoom: wheel • Pan: right click</p></div>
+          <div class="legend">
+            <span><i class="lgdot lg-ok"></i>OK</span>
+            <span><i class="lgdot lg-warn"></i>Warning</span>
+            <span><i class="lgdot lg-crit"></i>Critical</span>
+          </div>
+        </div>
+        <div class="panelBody">
+          <div class="threeWrap" id="threeWrap">
+            <div class="threeHud">
+              <div class="hudPill" id="hudSelected">Selected: —</div>
+              <div class="hudPill" id="hudInfo">—</div>
+            </div>
+            <div class="helpText">
+              <span>Tip: click a rack</span>
+              <span id="hudHint"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+  import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+    authDomain: "ware-house-robot.firebaseapp.com",
+    projectId: "ware-house-robot",
+    storageBucket: "ware-house-robot.firebasestorage.app",
+    messagingSenderId: "1053408602269",
+    appId: "1:1053408602269:web:fb276014330b5161488c74",
+    measurementId: "G-73HM1FJ2FM"
+  };
+
+  const statusMsg = document.getElementById("statusMsg");
+  const debugMsg  = document.getElementById("debugMsg");
+  const chipTime  = document.getElementById("chipTime");
+  const chipCount = document.getElementById("chipCount");
+
+  function nowTime(){ return new Date().toLocaleString(); }
+  function safeNumber(x,f=0){ const n=Number(x); return Number.isFinite(n)?n:f; }
+  function statusByPercent(p){ if(p>=95) return "CRITICAL"; if(p>=80) return "WARNING"; return "OK"; }
+
+  /* Tabs */
+  const btn2d=document.getElementById("btn2d"), btn3d=document.getElementById("btn3d");
+  const view2d=document.getElementById("view2d"), view3d=document.getElementById("view3d");
+  btn2d.onclick=()=>{btn2d.classList.add("active");btn3d.classList.remove("active");view2d.classList.add("active");view3d.classList.remove("active");};
+  btn3d.onclick=()=>{btn3d.classList.add("active");btn2d.classList.remove("active");view3d.classList.add("active");view2d.classList.remove("active"); onResize(); };
+
+  /* 2D render */
+  function render2D(racks){
+    chipTime.textContent  = "Last sync: " + nowTime();
+    chipCount.textContent = "Racks: " + racks.length;
+
+    const cardGrid=document.getElementById("cardGrid");
+    const map=document.getElementById("map");
+    cardGrid.innerHTML=""; map.innerHTML="";
+
+    racks.forEach(r=>{
+      const cap=safeNumber(r.capacity,0);
+      const cur=safeNumber(r.current,0);
+      const percent=cap>0?Math.round((cur/cap)*100):0;
+      const status=statusByPercent(percent);
+
+      const itemName = r.items ?? r.item ?? r.product ?? "-";
+
+      const el=document.createElement("div");
+      el.className="card";
+      el.innerHTML=`
+        <div class="cardTop">
+          <div>
+            <div class="cardTitle">${r.rackId ?? "-"}</div>
+            <div class="cardMeta">${itemName} • Zone ${r.zone ?? "-"}</div>
+          </div>
+          <div class="badge ${status}"><span class="dot"></span>${status}</div>
+        </div>
+        <div>${cur} / ${cap} (${percent}%)</div>
+        <div class="bar"><div class="fill" style="width:${Math.max(0,Math.min(100,percent))}%"></div></div>
+        <div class="foot">
+          <span>Updated: ${r.lastUpdated ?? r.lastUpdate ?? "-"}</span>
+          <span>${percent>=95?"Immediate action":percent>=80?"Monitor":"Normal"}</span>
+        </div>
+      `;
+      cardGrid.appendChild(el);
+    });
+
+    const maxRow=Math.max(...racks.map(r=>safeNumber(r.row,1)),1);
+    const maxCol=Math.max(...racks.map(r=>safeNumber(r.col,1)),1);
+    const cols=Math.max(5,maxCol), rows=Math.max(5,maxRow);
+    map.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+
+    for(let i=0;i<rows*cols;i++){
+      const c=document.createElement("div");
+      c.className="cell empty";
+      c.innerHTML=`<div class="cellTop"><span class="pill">Empty</span><span class="statusDot" style="background:#e2e8f0;"></span></div><div class="cellBottom"><span>—</span><span>—</span></div>`;
+      map.appendChild(c);
+    }
+
+    racks.forEach(r=>{
+      const cap=safeNumber(r.capacity,0), cur=safeNumber(r.current,0);
+      const percent=cap>0?Math.round((cur/cap)*100):0;
+      const status=statusByPercent(percent);
+
+      const row=safeNumber(r.row,1)-1, col=safeNumber(r.col,1)-1;
+      const index=row*cols+col;
+      if(index>=0 && index<map.children.length){
+        const dotClass=status==="OK"?"sd-ok":status==="WARNING"?"sd-warn":"sd-crit";
+        map.children[index].className="cell";
+        map.children[index].innerHTML=`
+          <div class="cellTop"><span>${r.rackId ?? "-"}</span><span class="statusDot ${dotClass}"></span></div>
+          <div class="cellBottom"><span>Zone ${r.zone ?? "-"}</span><span>${percent}%</span></div>
+        `;
+      }
+    });
+  }
+
+  /* 3D */
+  const wrap=document.getElementById("threeWrap");
+  const hudSelected=document.getElementById("hudSelected");
+  const hudInfo=document.getElementById("hudInfo");
+  const hudHint=document.getElementById("hudHint");
+
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  renderer.shadowMap.enabled=true;
+  wrap.appendChild(renderer.domElement);
+
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0b1220);
+
+  const camera=new THREE.PerspectiveCamera(45, wrap.clientWidth/wrap.clientHeight, 0.1, 200);
+  camera.position.set(10,9,12);
+
+  const controls=new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping=true;
+  controls.target.set(5,2.5,4);
+  controls.update();
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0x223355,0.7));
+  const dir=new THREE.DirectionalLight(0xffffff,1.0);
+  dir.position.set(12,14,10);
+  dir.castShadow=true;
+  dir.shadow.mapSize.set(2048,2048);
+  scene.add(dir);
+
+  const floor=new THREE.Mesh(
+    new THREE.PlaneGeometry(60,60),
+    new THREE.MeshStandardMaterial({color:0x101a2f, roughness:0.85, metalness:0.05})
+  );
+  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true;
+  scene.add(floor);
+  scene.add(new THREE.GridHelper(60,60,0x24314d,0x1a2540));
+
+  const rackGroup=new THREE.Group(); scene.add(rackGroup);
+  let clickable=[];
+
+  const matFrame=new THREE.MeshStandardMaterial({color:0xdde6f5, metalness:0.25, roughness:0.4});
+  const matOk=new THREE.MeshStandardMaterial({color:0x16a34a});
+  const matWarn=new THREE.MeshStandardMaterial({color:0xf59e0b});
+  const matCrit=new THREE.MeshStandardMaterial({color:0xef4444});
+  const matBox=new THREE.MeshStandardMaterial({color:0x3b82f6, roughness:0.55});
+
+  function clear3D(){ clickable=[]; while(rackGroup.children.length) rackGroup.remove(rackGroup.children[0]); }
+  function getMat(status){ return status==="CRITICAL"?matCrit:status==="WARNING"?matWarn:matOk; }
+
+  function buildRack3D(r,x,z){
+    const cap=safeNumber(r.capacity,0), cur=safeNumber(r.current,0);
+    const percent=cap>0?Math.round((cur/cap)*100):0;
+    const status=statusByPercent(percent);
+    const itemName = r.items ?? r.item ?? r.product ?? "-";
+
+    const w=1.2,d=0.8,h=3.0,shelfCount=3;
+    const rack=new THREE.Group(); rack.position.set(x,0,z);
+
+    const postGeo=new THREE.BoxGeometry(0.07,h,0.07);
+    const postPos=[[-w/2,h/2,-d/2],[w/2,h/2,-d/2],[-w/2,h/2,d/2],[w/2,h/2,d/2]];
+    postPos.forEach(p=>{const m=new THREE.Mesh(postGeo,matFrame);m.position.set(...p);m.castShadow=true;rack.add(m);});
+
+    const shelfGeo=new THREE.BoxGeometry(w,0.06,d);
+    for(let i=0;i<shelfCount;i++){
+      const s=new THREE.Mesh(shelfGeo,matFrame);
+      s.position.set(0,0.35+i*0.95,0);
+      s.castShadow=true; s.receiveShadow=true; rack.add(s);
+    }
+
+    const label=new THREE.Mesh(new THREE.BoxGeometry(w,0.12,d), getMat(status));
+    label.position.set(0,h+0.10,0); label.castShadow=true; rack.add(label);
+
+    const boxTotal=12, filled=Math.round((percent/100)*boxTotal);
+    const boxGeo=new THREE.BoxGeometry(0.22,0.18,0.18);
+    let placed=0;
+    for(let s=0;s<shelfCount;s++){
+      for(let b=0;b<4;b++){
+        if(placed>=filled) break;
+        const box=new THREE.Mesh(boxGeo, matBox);
+        box.position.set(-0.45+b*0.30,0.45+s*0.95,0);
+        box.castShadow=true; rack.add(box);
+        placed++;
+      }
+    }
+
+    const hit=new THREE.Mesh(
+      new THREE.BoxGeometry(w+0.3,h+0.6,d+0.3),
+      new THREE.MeshStandardMaterial({color:0x000000,transparent:true,opacity:0})
+    );
+    hit.position.set(0,(h/2)+0.3,0);
+    hit.userData={rackId:r.rackId??"-", zone:r.zone??"-", items:itemName, current:cur, capacity:cap, percent, status};
+    rack.add(hit); clickable.push(hit);
+
+    return rack;
+  }
+
+  function render3D(racks){
+    clear3D();
+    const cols=Math.max(5, Math.max(...racks.map(r=>safeNumber(r.col,1)),1));
+    const spacingX=1.8, spacingZ=1.4;
+    const centerX=(cols-1)*spacingX*0.5;
+
+    racks.forEach(r=>{
+      const row=safeNumber(r.row,1), col=safeNumber(r.col,1);
+      const x=(col-1)*spacingX - centerX + 2;
+      const z=(row-1)*spacingZ + 2;
+      rackGroup.add(buildRack3D(r,x,z));
+    });
+
+    hudHint.textContent = "Racks rendered: " + racks.length;
+  }
+
+  const raycaster=new THREE.Raycaster();
+  const mouse=new THREE.Vector2();
+  renderer.domElement.addEventListener("click",(e)=>{
+    const rect=renderer.domElement.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-(((e.clientY-rect.top)/rect.height)*2-1);
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(clickable,false);
+    if(hits.length){
+      const d=hits[0].object.userData;
+      hudSelected.textContent="Selected: " + d.rackId;
+      hudInfo.textContent=`${d.status} • ${d.items} • ${d.current}/${d.capacity} (${d.percent}%) • Zone ${d.zone}`;
+    }
+  });
+
+  function animate(){ controls.update(); renderer.render(scene,camera); requestAnimationFrame(animate); }
+  animate();
+
+  function onResize(){
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    camera.aspect = wrap.clientWidth / wrap.clientHeight;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", onResize);
+
+  /* Firebase connect */
+  statusMsg.innerHTML = "<strong>Connecting to Firebase…</strong>";
+  debugMsg.textContent = "";
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+
+  function startListener(collectionName){
+    statusMsg.innerHTML = `<strong>Listening:</strong> Firestore collection "<strong>${collectionName}</strong>"`;
+    return onSnapshot(
+      collection(db, collectionName),
+      (snap)=>{
+        const racks = snap.docs.map(d=>d.data());
+        debugMsg.textContent = `Docs received: ${snap.size} (from "${collectionName}")`;
+
+        if(snap.size === 0){
+          statusMsg.innerHTML = `Connected ✅ but collection "<strong>${collectionName}</strong>" is empty.`;
+          render2D([]); render3D([]);
+          return;
+        }
+
+        statusMsg.textContent = "Connected ✅ Real-time updates enabled.";
+        racks.sort((a,b)=>String(a.rackId||"").localeCompare(String(b.rackId||"")));
+        render2D(racks);
+        render3D(racks);
+      },
+      (err)=>{
+        console.error(err);
+        statusMsg.innerHTML = `Firebase error ❌ <strong>${err.code}</strong> — ${err.message}`;
+        debugMsg.textContent = "Fix: Firestore Rules must allow read OR use Firebase Authentication.";
+      }
+    );
+  }
+
+  // Try racks first
+  let unsub = startListener("racks");
+
+  // If after 2 seconds still empty, try "rack" (common mistake)
+  setTimeout(()=>{
+    const txt = debugMsg.textContent || "";
+    if(txt.includes("Docs received: 0")){
+      unsub();
+      unsub = startListener("rack");
+    }
+  }, 2000);
+
+</script>
+</body>
+</html>
+

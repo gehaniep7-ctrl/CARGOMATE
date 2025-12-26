@@ -1,0 +1,5 @@
+[
+  {"rackId":"RACK-01","zone":"A","item":"Boxes","capacity":100,"current":60,"lastUpdated":"2025-12-20 10:00","row":1,"col":1},
+  {"rackId":"RACK-02","zone":"A","item":"Bottles","capacity":200,"current":150,"lastUpdated":"2025-12-20 10:00","row":1,"col":2},
+  {"rackId":"RACK-03","zone":"B","item":"Cans","capacity":300,"current":290,"lastUpdated":"2025-12-20 10:00","row":1,"col":3}
+]
