@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rack Digital Twin</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:rgba(255,255,255,.05);
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --line:rgba(148,163,184,.18);
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --brand:#22c55e;
+      --brand2:#3b82f6;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --crit:#ef4444;
+      --radius:18px;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(59,130,246,.22), transparent 55%),
+                  radial-gradient(900px 600px at 80% 20%, rgba(34,197,94,.18), transparent 55%),
+                  #070b14;
+      color:var(--text);
+    }
+
+    .topbar{
+      position:sticky; top:0; z-index:5;
+      background:rgba(10,15,28,.72);
+      backdrop-filter: blur(12px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar-inner{
+      max-width:1280px;
+      margin:0 auto;
+      padding:14px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{display:flex; align-items:center; gap:12px;}
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,var(--brand2),var(--brand));
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .titleWrap{display:flex;flex-direction:column;line-height:1.1;}
+    .title{font-size:16px;font-weight:900;margin:0;letter-spacing:.2px;}
+    .subtitle{font-size:12px;color:var(--muted);margin:0;}
+
+    .rightTools{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+    .seg{
+      display:inline-flex;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .seg button{
+      border:0;
+      background:transparent;
+      padding:9px 14px;
+      font-weight:900;
+      cursor:pointer;
+      color:var(--muted);
+    }
+    .seg button.active{
+      background:rgba(255,255,255,.12);
+      color:#fff;
+    }
+    .chip{
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      padding:8px 10px;
+      border-radius:999px;
+    }
+
+    .msg{
+      max-width:1280px;
+      margin:10px auto 0 auto;
+      padding:0 18px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .page{
+      max-width:1280px;
+      margin:0 auto;
+      padding:16px 18px 26px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr;}
+    }
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHead{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .panelHead h2{
+      margin:0;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .panelHead p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .panelBody{padding:16px;}
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(260px, 1fr));
+      gap:12px;
+    }
+    @media (max-width: 720px){
+      .cards{grid-template-columns:1fr;}
+    }
+    .card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.18);
+      padding:14px;
+    }
+    .cardTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .cardTitle{margin:0;font-size:14px;font-weight:900;}
+    .cardMeta{font-size:12px;color:var(--muted);margin-top:4px;text-transform: capitalize;}
+
+    .badge{
+      font-size:12px;
+      font-weight:900;
+      padding:6px 10px;
+      border-radius:999px;
+      color:#0b1220;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+      background:#fff;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:#0b1220;opacity:.9;}
+    .OK{background:rgba(34,197,94,.9); color:#04130c;}
+    .WARNING{background:rgba(245,158,11,.9); color:#1a1204;}
+    .CRITICAL{background:rgba(239,68,68,.9); color:#1a0606;}
+
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .k{font-size:12px;color:var(--muted);margin:0;}
+    .v{margin:4px 0 0 0;font-size:13px;font-weight:900;}
+
+    .bar{
+      height:10px;
+      background:rgba(255,255,255,.06);
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:10px;
+      border:1px solid var(--line);
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(59,130,246,.9), rgba(34,197,94,.9));
+    }
+    .foot{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .legend{
+      display:flex; gap:10px; flex-wrap:wrap;
+      font-size:12px; color:var(--muted);
+    }
+    .legend span{display:flex;align-items:center;gap:6px;}
+    .lgdot{width:10px;height:10px;border-radius:50%;}
+    .lg-ok{background:var(--ok);}
+    .lg-warn{background:var(--warn);}
+    .lg-crit{background:var(--crit);}
+
+    .map{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
+    }
+    .cell{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+      min-height:74px;
+      background:rgba(0,0,0,.18);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .empty{opacity:.55;}
+    .cellTop{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      font-weight:900; font-size:12px;
+    }
+    .pill{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:var(--muted);
+      background:rgba(255,255,255,.05);
+      font-weight:800;
+    }
+    .cellBottom{
+      font-size:12px;
+      color:var(--muted);
+      display:flex; justify-content:space-between; gap:10px;
+    }
+    .statusDot{width:10px;height:10px;border-radius:50%;}
+    .sd-ok{background:var(--ok);}
+    .sd-warn{background:var(--warn);}
+    .sd-crit{background:var(--crit);}
+
+    #rack3d{
+      width:100%;
+      height:560px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      background: radial-gradient(900px 600px at 40% 20%, rgba(59,130,246,.25), transparent 60%),
+                  radial-gradient(700px 450px at 70% 30%, rgba(34,197,94,.16), transparent 60%),
+                  #060a14;
+    }
+
+    .err3d{
+      color:#ff6b6b;
+      font-weight:900;
+      font-size:12px;
+      margin-top:10px;
+    }
+
+    .modalBack{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.6);
+      display:none; align-items:center; justify-content:center;
+      padding:16px; z-index:20;
+    }
+    .modal{
+      background:#0b1220;
+      border-radius:18px;
+      padding:16px;
+      max-width:420px;
+      width:100%;
+      border:1px solid var(--line);
+      box-shadow: 0 18px 60px rgba(0,0,0,.60);
+    }
+    .modal h3{margin:0 0 8px 0; font-size:15px;}
+    .modal p{margin:8px 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .btn{
+      margin-top:12px;
+      width:100%;
+      padding:10px;
+      border:0;
+      border-radius:12px;
+      background:#fff;
+      color:#0b1220;
+      font-weight:900;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="titleWrap">
+          <p class="title">Rack Digital Twin</p>
+          <p class="subtitle">Live rack status • real-time from Firebase</p>
+        </div>
+      </div>
+
+      <div class="rightTools">
+        <div class="seg">
+          <button id="btn2d" class="active">2D View</button>
+          <button id="btn3d">3D View</button>
+        </div>
+        <div class="chip" id="chipTime">Last sync: —</div>
+        <div class="chip" id="chipCount">Racks: —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="msg" id="statusMsg"></div>
+
+  <div class="page">
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="panel">
+        <div class="panelHead">
+          <div>
+            <h2>Racks</h2>
+            <p id="leftSub">Overview of capacity and health</p>
+          </div>
+        </div>
+
+        <div class="panelBody">
+          <div id="cardGrid" class="cards"></div>
+          <div id="rack3d" style="display:none;"></div>
+          <div id="err3d" class="err3d" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="panel">
+        <div class="panelHead">
+          <div>
+            <h2>Warehouse Rack Map</h2>
+            <p>Layout view (row/col)</p>
+          </div>
+          <div class="legend">
+            <span><i class="lgdot lg-ok"></i>OK</span>
+            <span><i class="lgdot lg-warn"></i>Warning</span>
+            <span><i class="lgdot lg-crit"></i>Critical</span>
+          </div>
+        </div>
+        <div class="panelBody">
+          <div id="map" class="map"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalBack" class="modalBack">
+    <div class="modal">
+      <h3 style="color:#ff6b6b;">Critical Rack Alert</h3>
+      <p id="modalText"></p>
+      <button class="btn" onclick="closeModal()">Acknowledge</button>
+    </div>
+  </div>
+
+  <!-- Three.js ONLY (no OrbitControls) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoCgLFdWbDk29T3Mo3L7DvoQ-x-hEDNWk",
+      authDomain: "ware-house-robot.firebaseapp.com",
+      projectId: "ware-house-robot",
+      storageBucket: "ware-house-robot.firebasestorage.app",
+      messagingSenderId: "1053408602269",
+      appId: "1:1053408602269:web:fb276014330b5161488c74",
+      measurementId: "G-73HM1FJ2FM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const alreadyAlerted = new Set();
+
+    function statusByPercent(p){
+      if(p >= 95) return "CRITICAL";
+      if(p >= 80) return "WARNING";
+      return "OK";
+    }
+    function nowTime(){ return new Date().toLocaleString(); }
+    function safeNumber(x, fallback=0){
+      const n = Number(x);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    window.closeModal = function closeModal(){
+      document.getElementById("modalBack").style.display = "none";
+    };
+    function openModal(text){
+      document.getElementById("modalText").innerText = text;
+      document.getElementById("modalBack").style.display = "flex";
+    }
+
+    // Cache for 3D redraw
+    let racksCache = [];
+
+    function renderUI(racks){
+      racksCache = racks;
+
+      document.getElementById("chipTime").innerText = "Last sync: " + nowTime();
+      document.getElementById("chipCount").innerText = "Racks: " + racks.length;
+
+      // Cards
+      const cardGrid = document.getElementById("cardGrid");
+      cardGrid.innerHTML = "";
+
+      racks.forEach(r=>{
+        const cap = safeNumber(r.capacity, 0);
+        const cur = safeNumber(r.current, 0);
+        const percent = cap > 0 ? Math.round((cur / cap) * 100) : 0;
+        const status = statusByPercent(percent);
+        const itemName = (r.items ?? r.item ?? r.product ?? "-");
+
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = `
+          <div class="cardTop">
+            <div>
+              <div class="cardTitle">${r.rackId ?? "-"} <span style="color:var(--muted);font-weight:900;">(Zone ${r.zone ?? "-"})</span></div>
+              <div class="cardMeta">${itemName}</div>
+            </div>
+            <div class="badge ${status}"><span class="dot"></span>${status}</div>
+          </div>
+
+          <div class="kv">
+            <div>
+              <p class="k">Capacity</p>
+              <p class="v">${cap}</p>
+            </div>
+            <div>
+              <p class="k">Current</p>
+              <p class="v">${cur} <span style="color:var(--muted);font-weight:900;font-size:12px;">(${percent}%)</span></p>
+            </div>
+          </div>
+
+          <div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, percent))}%"></div></div>
+
+          <div class="foot">
+            <span>Updated: ${r.lastUpdated ?? "-"}</span>
+            <span>${percent >= 95 ? "Immediate action" : percent >= 80 ? "Monitor" : "Normal"}</span>
+          </div>
+        `;
+        cardGrid.appendChild(el);
+
+        if(status === "CRITICAL" && r.rackId && !alreadyAlerted.has(r.rackId)){
+          alreadyAlerted.add(r.rackId);
+          openModal(`${r.rackId} is CRITICAL (${percent}%). Item: ${itemName}. Zone: ${r.zone ?? "-"}.`);
+        }
+        if(status !== "CRITICAL" && r.rackId && alreadyAlerted.has(r.rackId)){
+          alreadyAlerted.delete(r.rackId);
+        }
+      });
+
+      // Map
+      const map = document.getElementById("map");
+      map.innerHTML = "";
+
+      const maxRow = Math.max(...racks.map(r=>safeNumber(r.row, 1)), 1);
+      const maxCol = Math.max(...racks.map(r=>safeNumber(r.col, 1)), 1);
+
+      const cols = Math.max(5, maxCol);
+      const rows = Math.max(5, maxRow);
+      map.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+      for(let i=0;i<rows*cols;i++){
+        const c = document.createElement("div");
+        c.className = "cell empty";
+        c.innerHTML = `
+          <div class="cellTop">
+            <span class="pill">Empty</span>
+            <span class="statusDot" style="background:rgba(255,255,255,.12);"></span>
+          </div>
+          <div class="cellBottom">
+            <span>—</span><span>—</span>
+          </div>
+        `;
+        map.appendChild(c);
+      }
+
+      racks.forEach(r=>{
+        const cap = safeNumber(r.capacity, 0);
+        const cur = safeNumber(r.current, 0);
+        const percent = cap > 0 ? Math.round((cur / cap) * 100) : 0;
+        const status = statusByPercent(percent);
+
+        const row = safeNumber(r.row, 1) - 1;
+        const col = safeNumber(r.col, 1) - 1;
+        const index = row * cols + col;
+
+        if(index >= 0 && index < map.children.length){
+          const dotClass = status === "OK" ? "sd-ok" : status === "WARNING" ? "sd-warn" : "sd-crit";
+          map.children[index].className = "cell";
+          map.children[index].innerHTML = `
+            <div class="cellTop">
+              <span>${r.rackId ?? "-"}</span>
+              <span class="statusDot ${dotClass}" title="${status}"></span>
+            </div>
+            <div class="cellBottom">
+              <span>Zone ${r.zone ?? "-"}</span>
+              <span>${percent}%</span>
+            </div>
+          `;
+        }
+      });
+
+      if(is3D){
+        try{ draw3D(racksCache); }catch(e){}
+      }
+    }
+
+    const msg = document.getElementById("statusMsg");
+    msg.innerText = "Connecting to Firebase…";
+
+    onSnapshot(
+      collection(db, "racks"),
+      (snap) => {
+        const racks = snap.docs.map(d => d.data());
+        racks.sort((a,b)=> String(a.rackId||"").localeCompare(String(b.rackId||"")));
+        msg.innerText = "Connected ✅ Real-time updates enabled.";
+        renderUI(racks);
+      },
+      (err) => {
+        console.error(err);
+        msg.innerText = "Firebase error ❌ Check Firestore rules + config.";
+      }
+    );
+
+    /* =========================
+       2D / 3D TOGGLE
+    ========================== */
+    let is3D = false;
+    const btn2d = document.getElementById("btn2d");
+    const btn3d = document.getElementById("btn3d");
+    const cardGrid = document.getElementById("cardGrid");
+    const rack3d = document.getElementById("rack3d");
+    const leftSub = document.getElementById("leftSub");
+
+    btn2d.addEventListener("click", ()=>{
+      is3D = false;
+      btn2d.classList.add("active");
+      btn3d.classList.remove("active");
+      cardGrid.style.display = "grid";
+      rack3d.style.display = "none";
+      leftSub.textContent = "Overview of capacity and health";
+    });
+
+    btn3d.addEventListener("click", async ()=>{
+      is3D = true;
+      btn3d.classList.add("active");
+      btn2d.classList.remove("active");
+      cardGrid.style.display = "none";
+      rack3d.style.display = "block";
+      leftSub.textContent = "3D warehouse view (NO OrbitControls needed)";
+
+      init3DOnce();      // no async needed now
+      draw3D(racksCache);
+    });
+
+    /* =========================
+       3D (NO OrbitControls)
+       Drag = rotate, Wheel = zoom
+    ========================== */
+    let scene, camera, renderer, rackGroup;
+    let started = false;
+
+    // simple orbit values
+    let target = new THREE.Vector3(3.5, 1.2, 3.0);
+    let radius = 18;
+    let theta = Math.PI / 4; // left-right
+    let phi = Math.PI / 3;   // up-down
+    let dragging = false;
+    let lastX = 0, lastY = 0;
+
+    function updateCamera(){
+      const x = target.x + radius * Math.sin(phi) * Math.cos(theta);
+      const z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+      const y = target.y + radius * Math.cos(phi);
+
+      camera.position.set(x,y,z);
+      camera.lookAt(target);
+    }
+
+    function init3DOnce(){
+      if(started) return;
+      started = true;
+
+      const errBox = document.getElementById("err3d");
+      errBox.style.display = "none";
+      errBox.innerText = "";
+
+      try{
+        if(!window.THREE){
+          errBox.style.display = "block";
+          errBox.innerText = "3D ERROR: Three.js not loaded (CDN blocked). Try another network or CDN.";
+          return;
+        }
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060a14);
+
+        const w = rack3d.clientWidth;
+        const h = rack3d.clientHeight;
+
+        camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 2000);
+
+        renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        rack3d.innerHTML = "";
+        rack3d.appendChild(renderer.domElement);
+
+        // lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+        const dir = new THREE.DirectionalLight(0xffffff, 0.85);
+        dir.position.set(12, 18, 10);
+        scene.add(dir);
+
+        // floor grid
+        const grid = new THREE.GridHelper(200, 40, 0x334155, 0x111827);
+        grid.position.y = 0;
+        scene.add(grid);
+
+        // floor plane
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(200, 200),
+          new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 1 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.01;
+        scene.add(floor);
+
+        rackGroup = new THREE.Group();
+        scene.add(rackGroup);
+
+        // mouse controls
+        const el = renderer.domElement;
+
+        el.addEventListener("pointerdown", (e)=>{
+          dragging = true;
+          lastX = e.clientX; lastY = e.clientY;
+          el.setPointerCapture(e.pointerId);
+        });
+
+        el.addEventListener("pointermove", (e)=>{
+          if(!dragging) return;
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          lastX = e.clientX; lastY = e.clientY;
+
+          theta -= dx * 0.005;
+          phi   -= dy * 0.005;
+
+          // clamp phi to avoid flip
+          phi = Math.max(0.2, Math.min(Math.PI - 0.2, phi));
+
+          updateCamera();
+        });
+
+        el.addEventListener("pointerup", ()=>{
+          dragging = false;
+        });
+
+        el.addEventListener("wheel", (e)=>{
+          e.preventDefault();
+          radius += e.deltaY * 0.01;
+          radius = Math.max(6, Math.min(60, radius));
+          updateCamera();
+        }, { passive:false });
+
+        window.addEventListener("resize", ()=>{
+          if(!renderer || !camera) return;
+          const ww = rack3d.clientWidth;
+          const hh = rack3d.clientHeight;
+          camera.aspect = ww / hh;
+          camera.updateProjectionMatrix();
+          renderer.setSize(ww, hh);
+        });
+
+        updateCamera();
+        animate();
+      }catch(e){
+        console.error(e);
+        errBox.style.display = "block";
+        errBox.innerText = "3D ERROR: Three.js failed to initialize on this browser.";
+      }
+    }
+
+    function animate(){
+      requestAnimationFrame(animate);
+      if(renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    function makeRackModel(color, fillPercent){
+      const g = new THREE.Group();
+
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness:0.1, roughness:0.9 });
+      const postGeo = new THREE.BoxGeometry(0.10, 3.4, 0.10);
+      const shelfGeo = new THREE.BoxGeometry(1.9, 0.10, 1.2);
+
+      const posts = [
+        [-0.88, 1.7, -0.55], [0.88, 1.7, -0.55],
+        [-0.88, 1.7,  0.55], [0.88, 1.7,  0.55]
+      ];
+      posts.forEach(([x,y,z])=>{
+        const p = new THREE.Mesh(postGeo, frameMat);
+        p.position.set(x,y,z);
+        g.add(p);
+      });
+
+      for(let i=0;i<4;i++){
+        const y = 0.45 + i*0.85;
+        const shelf = new THREE.Mesh(shelfGeo, frameMat);
+        shelf.position.set(0,y,0);
+        g.add(shelf);
+      }
+
+      const fillH = Math.max(0.25, 3.1 * (fillPercent/100));
+      const fillMat = new THREE.MeshStandardMaterial({ color, metalness:0.03, roughness:0.65 });
+      const fill = new THREE.Mesh(new THREE.BoxGeometry(1.55, fillH, 0.95), fillMat);
+      fill.position.set(0, fillH/2, 0);
+      g.add(fill);
+
+      return g;
+    }
+
+    function draw3D(racks){
+      if(!scene || !rackGroup) return;
+
+      while(rackGroup.children.length) rackGroup.remove(rackGroup.children[0]);
+
+      const spacingX = 4.0;
+      const spacingZ = 3.6;
+
+      racks.forEach(r=>{
+        const row = safeNumber(r.row, 1);
+        const col = safeNumber(r.col, 1);
+
+        const cap = safeNumber(r.capacity, 0);
+        const cur = safeNumber(r.current, 0);
+        const percent = cap > 0 ? Math.round((cur / cap) * 100) : 0;
+        const status = statusByPercent(percent);
+
+        const color =
+          status==="OK" ? 0x22c55e :
+          status==="WARNING" ? 0xf59e0b :
+          0xef4444;
+
+        const x = (col-1) * spacingX;
+        const z = (row-1) * spacingZ;
+
+        const rack = makeRackModel(color, percent);
+        rack.position.set(x, 0, z);
+        rackGroup.add(rack);
+      });
+
+      // auto-center target for nicer view
+      target = new THREE.Vector3(3.5, 1.2, 3.0);
+      updateCamera();
+    }
+  </script>
+</body>
+</html>
