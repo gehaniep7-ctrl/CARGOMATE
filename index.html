@@ -8,6 +8,25 @@
 
 <body class="landing">
 
+  <!-- ✅ Digital Twin Button -->
+  <button
+    onclick="openTwin()"
+    style="
+      position: fixed;
+      top: 20px;
+      right: 140px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    ">
+    Digital Twin
+  </button>
+
   <!-- Login button at top-right -->
   <button class="login-btn-top" onclick="window.location.href='login.html'">
     Login
@@ -17,14 +36,14 @@
   <div class="landing-card">
 
       <div class="landing-title">
-        CARGOMATE Warehouse Dashboard
+        POLYMAX Warehouse Dashboard
       </div>
 
       <div class="landing-subtitle">
         Live overview of orders, stock levels and packing performance.
       </div>
 
-  </div> <!-- END landing-card -->
+  </div>
 
   <!-- Help Center -->
   <div class="help-center-card">
@@ -42,7 +61,14 @@
     </a>
   </div>
 
-  <!-- Firebase (optional here, safe to keep) -->
+  <!-- ✅ Digital Twin Open Function -->
+  <script>
+    function openTwin() {
+      window.open("digital_twin/rack_twin.html", "_blank");
+    }
+  </script>
+
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
